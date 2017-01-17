@@ -1,0 +1,60 @@
+#!/bin/bash
+
+
+VID=$1
+PAR=$2
+if [ "$PAR" = "" ]; then
+ echo give: 1/  videoname 2/name of project:
+ exit
+fi
+
+echo "########## decode video to TIF"
+echo "convert $VID  im%05d.tif"
+
+
+echo "########## copy your file into ./TEMP... creating TEMP"
+mkdir -p TEMP
+echo "cp im*tif TEMP/"
+read -p "copied? [Enter,n] : " ans
+if [ "$ans" != "" ]; then
+  exit
+fi
+
+echo "cd TEMP"
+echo "########## consider resize: "
+echo  'cd TEMP;mogrify -resize 800x  im*.tif'
+echo  'cd TEMP;mogrify -resize 600x  im*.tif'
+echo  'cd TEMP;mogrify -resize 300x  im*.tif'
+
+echo "----------"
+echo ... Written aligned images to files with prefix a$PAR 
+echo ... Written project file $PAR.pto
+echo "-----------"
+
+echo "######## RUN align:  -m will do zooms; -i the center"
+
+echo " align_image_stack -p $PAR.pto -o o$PAR -v  -m -a a$PAR " 'im*.tif'
+echo " align_image_stack -p $PAR.pto -o o$PAR -v  -i -a a$PAR " 'im*.tif'
+
+echo "######## RUN hugin: 1/calc FoView; 2/calc size; 3/check images ;4/stitch"
+echo "########  select prefix  x  on saving "
+echo "hugin  $PAR.pto"
+
+echo "####### WHAT NOW?  ffmpeg - GIF - enfuse	   "
+echo "#######  video  -  IM gif   -   hugin HDR"
+read -p "[f]fmpeg [g]if  [e]nfuse: "   sel
+
+if [ "$sel" = "f" ]; then
+echo "ffmpeg -r 10 -i x_exposure_layers_%04d.tif output_$PAR.mp4"
+echo "ffmpeg -r 10 -i x_exposure_layers_%05d.tif output_$PAR.mp4"
+fi
+
+if [ "$sel" = "e" ]; then
+echo 'convert -delay 5 x*.tif -reverse -coalesce -reverse -coalesce -dither floydsteinberg -layers optimize-plus -layers optimize-transparency -verbose reverse.gif'
+fi
+
+if [ "$sel" = "e" ]; then
+echo "### to enhance depth field: "
+echo "enfuse -o result.tif --exposure-weight=0 --saturation-weight=0 --contrast-weight=1 --hard-mask x*tif"
+fi
+

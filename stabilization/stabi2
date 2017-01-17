@@ -1,0 +1,147 @@
+#!/bin/bash
+
+#echo i start with list of jpg files
+
+ PAR=TEMP
+
+
+if [ "$1" = "-n" ]; then
+    PAR="$2"
+    shift
+    shift
+    echo PROJECT NAME IS $PAR
+    echo "use: -t *.jpg   -m     -i/-z/-i2/-C    -v/-g/-e/-f"
+    echo "     tifs       move   align   video/gif/EXPenhance/focus"
+fi
+
+if [ "$1" = "-t" ]; then
+    shift
+    echo ... convert to tifs:
+    while [ "$1" != "" ]; do
+	AR="$1"
+	echo $AR
+	convert "$AR" `basename $AR .jpg`.tif
+	#    rename "s/\.jpg\.tif/.tif/" *.jpg.tif
+	shift
+    done
+fi
+
+
+
+if [ "$1" = "-m" ]; then
+    echo ...move tifs to $PAR
+    mkdir $PAR
+    mv *.tif "$PAR/"
+    cd "$PAR"
+    echo cd $PAR
+    echo "cd $PAR"
+    echo "########## consider resize: "
+    echo  'cd $PAR;mogrify -resize 800x  im*.tif'
+    echo  'cd $PAR;mogrify -resize 600x  im*.tif'
+    echo  'cd $PAR;mogrify -resize 300x  im*.tif'
+    echo ==== NOW REMOVE BLURRED OR SOMETHING ====== LIKE
+fi
+
+
+if [ "$1" = "-i" ]; then
+    echo ...align_image_stack with the CENTER
+    align_image_stack -p $PAR.pto -o ${PAR}o -v  -i --threads=4 -l   -a ${PAR}a  *.tif
+    echo "##############################################"
+    echo "$PARa  now contain tif aligned on center"
+    echo  ... hugin run ... CHECK ALL IS OK
+    echo hugin $PAR
+    #    hugin  $PAR.pto
+fi
+
+
+if [ "$1" = "-i2" ]; then
+    echo ...align_image_stack with the CENTER
+    align_image_stack -p $PAR.pto -o ${PAR}o -v  -i -s 2 --threads=4 -l -a ${PAR}a  *.tif
+    echo "##############################################"
+    echo "$PARa  now contain tif aligned on center"
+    echo  ... hugin run ... CHECK ALL IS OK
+    echo hugin $PAR
+    #    hugin  $PAR.pto
+fi
+
+# if [ "$1" = "-mag" ]; then
+#     echo ...align_image_stack with the CENTER
+#     align_image_stack -p $PAR.pto -o ${PAR}o -v  -d -a ${PAR}a  *.tif
+#     echo "##############################################"
+#     echo "$PARa  now contain tif aligned on center"
+#     echo  ... hugin run ... CHECK ALL IS OK
+#     echo hugin $PAR
+#     #    hugin  $PAR.pto
+# fi
+
+if [ "$1" = "-C" ]; then
+    echo ...align_image_stack with the CENTER
+    align_image_stack -p $PAR.pto -o ${PAR}o -v  -C --threads=4 -l  -a ${PAR}a  *.tif
+    echo "##############################################"
+    echo "$PARa  now contain tif aligned on center"
+    echo  ... hugin run ... CHECK ALL IS OK
+    echo hugin $PAR
+    #    hugin  $PAR.pto
+fi
+
+if [ "$1" = "-z" ]; then
+    echo ...align_image_stack with the ZOOM
+    align_image_stack -p $PAR.pto -o ${PAR}o -v -m  --threads=4   -a ${PAR}a  *.tif
+    echo "##############################################"
+    echo "$PARa  now contain tif aligned with zooms"
+    echo  ... hugin run ... CHECK ALL IS OK
+    echo hugin $PAR
+    #    hugin  $PAR.pto
+fi
+
+
+
+
+
+############################################################################
+
+if [ "$1" = "-v" ]; then
+    ffmpeg -r 3 -i ${PAR}a%04d.tif $PAR.mp4
+    ls -lh $PAR.mp4  $PAR.gif
+fi
+
+if [ "$1" = "-g" ]; then
+    echo GIF WITH BACKGROUN ...........
+    
+    convert -delay 5 `ls -1 ${PAR}a*.tif;ls -1r ${PAR}a*.tif` -reverse -coalesce -reverse -coalesce -dither floydsteinberg  -layers optimize-transparency  -layers optimize-plus -verbose -loop 0 $PAR.gif
+
+    echo gwenview $PAR.gif
+    ls -lh $PAR.mp4  $PAR.gif
+    
+fi
+
+
+##############################################
+if [ "$1" = "-f" ]; then
+
+    echo contrast-weight ....  focus
+    echo exposure-weight ....  well exposed contribute more
+    echo ....................  wMu and wSigma can tune what expo is more
+    echo saturation-weight ..  high saturation more
+    echo HardMask ...........  increases noise and also focus
+    echo .
+    enfuse -o ${PAR}_enhanced_depth.tif --exposure-weight=0 --saturation-weight=0 --contrast-weight=1 --hard-mask ${PAR}a*.tif
+    echo "=========== enhanced focus ============="
+    ls -lthr ${PAR}_enhanced_depth.tif
+    
+fi
+
+###http://blog.patdavid.net/2013/01/focus-stacking-macro-photos-enfuse.html
+if [ "$1" = "-e" ]; then
+
+    echo contrast-weight ....  focus
+    echo exposure-weight ....  well exposed contribute more
+    echo ....................  wMu and wSigma can tune what expo is more
+    echo saturation-weight ..  high saturation more
+    echo HardMask ...........  increases noise and also focus
+    echo .
+    enfuse -o ${PAR}_enhanced_exp.tif --exposure-weight=1 --saturation-weight=0 --contrast-weight=0  ${PAR}a*.tif
+    echo "=========== enhanced exposure ============="
+    ls -lthr ${PAR}_enhanced_exp.tif  
+    
+fi

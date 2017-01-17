@@ -1,0 +1,34 @@
+#!/bin/bash
+#
+#
+#
+#
+
+PAR=$1
+if [ "$PAR" = "" ]; then
+    echo USAGE:
+    echo 'masscrop 640x480+100+100 *.jpg'
+    echo ... files with _IMcrop word are created
+    echo ... crop is not applied on _IMcrop files
+    exit
+fi
+shift
+
+ARG=( "$@" )
+
+for i in ${ARG[*]}; do
+
+    echo $i | grep  "IMcrop." >/dev/null
+    if [ "$?" != "0" ]; then
+	file $i | grep JPEG >/dev/null
+	if [ "$?" = "0" ]; then
+	    #	echo $i is JPEG
+	    BASE=`basename $i .jpg`
+	    #	convert $i -crop 300x300+100+100 ${BASE}_crop.jpg
+	    echo + ...	convert $i -crop "$PAR" ${BASE}_IMcrop.jpg
+	    convert $i -crop "$PAR" ${BASE}_IMcrop.jpg
+	fi
+    else
+	echo ! ... $i already operated by crop
+    fi
+done 

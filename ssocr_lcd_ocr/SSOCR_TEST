@@ -1,0 +1,1 @@
+ssocr -v  -r 5   -D -t 95 -d -1  rotate 7 shear 135 crop 440 380 150 100   make_mono invert  erosion  2016-03-02-105013.jpg 
