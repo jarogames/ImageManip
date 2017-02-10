@@ -1,0 +1,115 @@
+#!/bin/bash
+
+
+HandBrakeCLI --help >/dev/null
+if [ "$?" != "0" ]; then
+    echo "INSTALL HandBrake First"
+    exit
+fi
+
+#ls -1 *.MOV.mp4 |
+#xargs  -I III
+if [ "$1" == "" ]; then
+echo "USAGE: mov2mkv file.MOV"
+echo "       ls -1 *.MOV | xargs -n 1 mov2mkv"
+echo " "
+exit
+fi
+mmovsize=0
+function chkmov {
+    MOV=$1
+    mmovsize=`ls -l */*.$MOV 2>/dev/null| awk 'BEGIN{$a=0} {a=a+$5/1000000} END{print a}' `
+    if [ "$mmovsize" = "" ]; then
+	mmovsize=0.0
+    fi
+    #$mmovsize
+}
+
+chkmov "MOV"
+movsize=$mmovsize
+chkmov "mp4"
+mp4size=$mmovsize
+chkmov "mkv"
+mkvsize=$mmovsize
+
+
+echo "SIZE :  MOV       MP4        MKV"
+echo "       $movsize    $mp4size    $mkvsize"
+
+
+function PROCEED {
+
+echo $III | grep "\.MOV$"
+if [ "$?" = "0" ]; then
+ echo ... ok .MOV
+ ############# udelej zvuk v NIKONU
+ ffmpeg -i $III -vcodec copy -acodec mp3 $III.mp4
+ if [ "$?" = "0" ]; then
+  # smaz puvodni MOV
+  rm $III
+ else
+  echo exiting ... problem with $III
+  exit
+ fi
+ ###############konec zvuku v NIKONu
+else
+ echo not .MOV file... $III
+
+ echo $III | grep "\.MOV.mp4$"
+ if [ "$?" = "0" ]; then
+     echo got $III    
+     DDD=`dirname $III`
+     III=$DDD"/"`basename $III .mp4`
+     
+     echo ... interrupted inthe middle... renaming to $III
+ else
+     echo not a good file ... exit
+     exit
+ fi
+fi
+
+echo ... preparing $III.mp4 to $III.mkv ... for handbrakeCLI
+#exit
+
+# predelej pomoci handbrake
+
+HandBrakeCLI -i $III.mp4 -o $III.mkv -f av_mkv -e x265 -q 20 --vfr -E mp3 -B 128
+if [ "$?" = "0" ]; then
+  rm $III.mp4
+else
+  echo ... problem with $III.mp4
+  exit
+fi
+}
+
+
+
+
+III=$1
+
+while [ "$III" != "" ]; do
+  III=$1
+  echo ...running $III
+  PROCEED
+  shift
+done
+
+
+movsize2=`ls -l */*.MOV | awk 'BEGIN{$a=0} {a=a+$5/1000000} END{print a}'`
+mp4size2=`ls -l */*.mp4 | awk 'BEGIN{$a=0} {a=a+$5/1000000} END{print a}'`
+mkvsize2=`ls -l */*.mkv | awk 'BEGIN{$a=0} {a=a+$5/1000000} END{print a}'`
+echo ==========================================
+echo "SIZE :  MOV       MP4        MKV"
+echo "    $movsize    $mp4size    $mkvsize"
+
+chkmov "MOV"
+movsize2=$mmovsize
+chkmov "mp4"
+mp4size2=$mmovsize
+chkmov "mkv"
+mkvsize2=$mmovsize
+
+
+echo "after:"
+echo "SIZE :  MOV       MP4        MKV"
+echo "      $movsize2    $mp4size2    $mkvsize2"
