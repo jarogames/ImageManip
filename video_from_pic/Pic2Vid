@@ -1,0 +1,78 @@
+#!/bin/bash
+
+ffmpeg -version >/dev/null
+if [ "$?" != "0" ]; then
+    echo 'install ffmpeg'
+    exit
+fi
+
+
+
+SIZE=36
+b=( "$@" )
+
+echo  "${b[0]}" | grep .jpg
+if [ "$?" != "0" ]; then
+    echo not jpg
+    exit
+fi
+
+#echo basename ${b[0]} .jpg
+NAME1=`basename ${b[0]}`
+
+NAME=`basename $NAME1 .jpg`
+
+P2W="P2W_"
+PAT=""
+
+
+echo ===============================================================
+echo .     PHASE 1 $NAME
+echo ===============================================================
+CNT=0
+TOT=${#b[@]}
+for a in ${b[@]}; do
+    BN=`basename $a`
+    DN=`dirname $a`
+    label=`basename $a .jpg`
+    printf "%4d/%4d " $CNT $TOT
+    CNT=$(( $CNT + 1 ))
+    MOD=$(( $CNT % 3 ))
+    echo $a ... to ...  $DN/${P2W}$BN;
+    if [ "$MOD" = "0" ]; then
+	convert $a  -fill white -undercolor "rgba(0.,0.,0.,0.5)" -gravity southeast -pointsize $SIZE -annotate +0+0 "$NAME" $DN/${P2W}$BN;
+    else
+	convert $a  -fill white -undercolor "rgba(0.,0.,0.,0.5)" -gravity southeast -pointsize $SIZE -annotate +0+0 "$NAME" `dirname $a`/${P2W}`basename $a` &
+    fi	
+    #    convert $a -normalize -auto-gamma -fill black -undercolor white -gravity southeast -pointsize $SIZE -annotate +0+0 "$a" ${P2W}$a;
+    PAT=`dirname $a`
+done
+
+
+DIR=${P2W}_temporary_files
+mkdir -p $DIR
+echo ===============================================================
+echo .     PHASE 2   moving to 
+echo ===============================================================
+echo searching FOR   $PAT/${P2W}\*
+echo .............................
+r=($(ls -1d $PAT/${P2W}*) )
+
+sleep 1
+i=0;
+for l in ${r[*]}; do
+    i=$(( $i + 1 ));
+    ii=`seq -f"%05g" $i $i` ;
+    echo $ii: $l moved  to ${DIR}/$ii.jpg
+    mv $l ${DIR}/$ii.jpg;
+done
+sleep 1
+
+#avconv -r 25 -i "%05d.jpg" -vcodec libx264 time-lapse.mp4
+echo ===============================================================
+echo .     PHASE 3 ... converting to mp4
+echo ===============================================================
+ffmpeg -v 6  -r 10 -i ${DIR}/%5d.jpg  -b:v 1600k ${NAME}.mp4
+rm -r ${DIR}
+
+echo mpv  ${NAME}.mp4
