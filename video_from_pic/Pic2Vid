@@ -40,9 +40,9 @@ for a in ${b[@]}; do
     MOD=$(( $CNT % 3 ))
     echo $a ... to ...  $DN/${P2W}$BN;
     if [ "$MOD" = "0" ]; then
-	convert $a  -fill white -undercolor "rgba(0.,0.,0.,0.5)" -gravity southeast -pointsize $SIZE -annotate +0+0 "$NAME" $DN/${P2W}$BN;
+	convert $a  -fill white -undercolor "rgba(0.,0.,0.,0.5)" -gravity southeast -pointsize $SIZE -annotate +0+0 "$label" $DN/${P2W}$BN;
     else
-	convert $a  -fill white -undercolor "rgba(0.,0.,0.,0.5)" -gravity southeast -pointsize $SIZE -annotate +0+0 "$NAME" `dirname $a`/${P2W}`basename $a` &
+	convert $a  -fill white -undercolor "rgba(0.,0.,0.,0.5)" -gravity southeast -pointsize $SIZE -annotate +0+0 "$label" `dirname $a`/${P2W}`basename $a` &
     fi	
     #    convert $a -normalize -auto-gamma -fill black -undercolor white -gravity southeast -pointsize $SIZE -annotate +0+0 "$a" ${P2W}$a;
     PAT=`dirname $a`
