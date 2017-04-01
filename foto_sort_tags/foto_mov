@@ -1,0 +1,60 @@
+#!/bin/bash
+
+
+PICTURE_DESTINATION=$HOME/PICTURES
+mkdir -p ${PICTURE_DESTINATION}
+
+#############################################
+#  255MB -> 80 MB     30% mkv  x265 codec
+#
+#    I want to create MOV2016_09_work or something...
+#    but no info from exim
+#
+# ! I want   LOG FILE to see the sizes....
+#
+###############################
+ffmpeg -version >/dev/null
+
+
+
+if [ "$?" = "0" ]; then
+    echo ... ffmpeg  [ok]
+else
+    echo install ffmpeg first...
+    exit
+fi
+HandBrakeCLI --help >/dev/null
+if [ "$?" = "0" ]; then
+    echo ... HandBrakeCLI  [ok]
+else
+    echo install HandBrakeCLI first...
+    exit
+fi
+
+
+############################################# AAA
+A=(` find . -iname "*.mov" `)
+
+for i in "${A[@]}"; do
+  date    >> $HOME/foto_mov.log
+  ls -lh $i >> $HOME/foto_mov.log
+############### RECODE #########    
+    dirin=`dirname $i`
+    out=`basename $i .MOV`
+    
+    # PROBLEM WITH SOUND
+    ffmpeg -i $i -vcodec copy -acodec mp3 $i.mp4
+    if [ "$?" = "0" ]; then
+	rm $i
+    fi
+    
+    HandBrakeCLI -i $i.mp4 -o $dirin/$out.mkv -f av_mkv -e x265 -q 20 --vfr -E mp3 -B 128
+    if [ "$?" = "0" ]; then
+	rm $i.mp4
+    fi
+  ls -lh $dirin/$out.mkv >> $HOME/foto_mov.log
+  date   >> $HOME/foto_mov.log
+  
+done
+
+  
