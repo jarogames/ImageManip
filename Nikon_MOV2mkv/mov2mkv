@@ -1,9 +1,9 @@
-#!/bin/bash
+ta;#!/bin/bash
 
 
 HandBrakeCLI --help >/dev/null
 if [ "$?" != "0" ]; then
-    echo "INSTALL HandBrake First"
+    echo "INSTALL HandBrake First  aptitude install handbrake-cli"
     exit
 fi
 
@@ -48,7 +48,8 @@ if [ "$?" = "0" ]; then
   # smaz puvodni MOV
   rm $III
  else
-  echo exiting ... problem with $III
+     echo !... exiting ... problem with $III
+     echo i... try aptitude install ffmpeg
   exit
  fi
  ###############konec zvuku v NIKONu
