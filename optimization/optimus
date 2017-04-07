@@ -1,8 +1,18 @@
 #!/bin/bash
 
+
+
 FILE=$1
 
 
 jpegoptim -m85 $FILE
+if [ "$?" != "0" ]; then
+    echo !... you need to aptitude install jpegoptim optimpng
+    exit
+fi
 
 optimpng -o 7 $FILE
+if [ "$?" != "0" ]; then
+    echo !... you need to aptitude install optimpng
+    exit
+fi
