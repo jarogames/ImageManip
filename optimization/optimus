@@ -3,16 +3,27 @@
 
 
 FILE=$1
-
-
-jpegoptim -m85 $FILE
-if [ "$?" != "0" ]; then
-    echo !... you need to aptitude install jpegoptim optimpng
+if [ -e "$FILE" ]; then
+    echo " "
+else
+    echo !... no existing file given
     exit
 fi
 
-optimpng -o 7 $FILE
-if [ "$?" != "0" ]; then
-    echo !... you need to aptitude install optimpng
-    exit
+file $FILE | grep JPEG >/dev/null
+if [ "$?" = "0" ]; then
+    jpegoptim -m85 $FILE
+    if [ "$?" != "0" ]; then
+	echo !... you need to aptitude install jpegoptim optipng
+	exit
+    fi
+fi
+
+file $FILE | grep PNG >/dev/null
+if [ "$?" = "0" ]; then
+    optipng -o 7 $FILE
+    if [ "$?" != "0" ]; then
+	echo !... you need to aptitude install optipng
+	exit
+    fi
 fi
