@@ -1,8 +1,29 @@
 #!/bin/bash
 
+
+
 FILE=$1
+if [ -e "$FILE" ]; then
+    echo " "
+else
+    echo !... no existing file given
+    exit
+fi
 
+file $FILE | grep JPEG >/dev/null
+if [ "$?" = "0" ]; then
+    jpegoptim -m85 $FILE
+    if [ "$?" != "0" ]; then
+	echo !... you need to aptitude install jpegoptim optipng
+	exit
+    fi
+fi
 
-jpegoptim -m85 $FILE
-
-optimpng -o 7 $FILE
+file $FILE | grep PNG >/dev/null
+if [ "$?" = "0" ]; then
+    optipng -o 7 $FILE
+    if [ "$?" != "0" ]; then
+	echo !... you need to aptitude install optipng
+	exit
+    fi
+fi
