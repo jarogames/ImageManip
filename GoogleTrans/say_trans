@@ -1,0 +1,49 @@
+#!/bin/bash
+
+
+trans -V >/dev/null;
+if [ "$?" != "0" ]; then
+    echo !... download trans
+    exit
+fi
+if [ "$1" = "" ]; then
+    echo !... no phrase ... give me a phrase to say
+    exit
+fi
+
+
+DESTINATION=$HOME
+PHRASE=$1
+#
+#
+# -b    brief
+# -p    play
+# -no-auto ... dont correct
+#  :cs = to cs
+#############################################
+if [ -e "$DESTINATION/$PHRASE.mp3" ];then
+    echo "!... The phrase already exists"
+    ls -lh "$DESTINATION/$PHRASE.mp3"
+    #echo ... quit
+else
+    echo +... translating: /"$PHRASE"/
+    trans -b -p -no-auto cs:cs "$PHRASE" -player "mpv --speed 0.9 --volume 100 -ao pcm:file=\"$DESTINATION/$PHRASE.wav\""
+
+    
+    # LOUDER 3x / --scale 3
+    lame --scale 3 "$DESTINATION/$PHRASE.wav"
+    rm   "$DESTINATION/$PHRASE.wav"
+fi
+
+
+echo +... speaking:
+if [ -e /usr/bin/omxplayer ]; then
+    /usr/bin/omxplayer -o local "$DESTINATION/$PHRASE.mp3"
+else
+    #mpv -quiet "$PHRASE.mp3"
+    #mpv --really-quiet  "$DESTINATION/$PHRASE.mp3"
+    mpv --really-quiet  "$DESTINATION/$PHRASE.mp3"
+fi
+
+
+
