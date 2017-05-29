@@ -11,6 +11,7 @@ import time
 import sys       # flush
 import tempfile
 
+import datetime
 parser=argparse.ArgumentParser(description="""
  ... 
 """)
@@ -127,16 +128,34 @@ for i in range(len(direct)):
     print( i,' ',direct[i] )
 
 
+    
 ############################
 #  extrasct sentences #############################
 ###########################
 MAXDISP=70
 sentences=re.findall(r'([A-Z].+?[\.:?!])[\s"“\n]', text )
+for i,v in enumerate( sentences ):
+    if i+1<len(sentences):
+        if len(v)+len(sentences[i+1])<99:
+            sentences[i]=sentences[i]+' '+sentences[i+1]
+            del sentences[i+1]
+for i,v in enumerate( sentences ):
+    if i+1<len(sentences):
+        if len(v)+len(sentences[i+1])<99:
+            sentences[i]=sentences[i]+' '+sentences[i+1]
+            del sentences[i+1]
+for i,v in enumerate( sentences ):
+    if i+1<len(sentences):
+        if len(v)+len(sentences[i+1])<99:
+            sentences[i]=sentences[i]+' '+sentences[i+1]
+            del sentences[i+1]
+            
+############################
+# 
+##############
 print( len(sentences),'sentences:===============================' )
 if not args.dryrun:
     for i in range(len(sentences)):
-        #if i in direct:
-        #print('=DIR: =',end="")
         print( "{:4d}".format(i),' ',sentences[i][0:MAXDISP] ,end='')
         if len(sentences[i])>MAXDISP:
             print('...')
@@ -151,6 +170,7 @@ with open( args.book+'.v2', 'w' ) as fout:
 print('i...                 ...preparing diff............')
 ndif=0
 ndifim=0
+
 #
 #ndif=difflib.ndiff(  text, text2 )
 #print( ''.join(ndif)   )
@@ -174,48 +194,95 @@ ndifim=0
 print('Differences:',ndif,' / important:',ndifim)
 print()      
 
+
+
+
+
 #####################################
 #  FOR ALL SENTENCES
 #
 #####################################
 #quit()
-for i in range(len(sentences)):
-    #if i in direct:
-        #print('=DIR: =',end="")
-    #print( "{:4d}  L:{:3d}".format(i,len(sentences[i])),' ',sentences[i][0:MAXDISP] ,end='')
-    if len(sentences[i])>MAXDISP:
-        print('...')
+
+
+
+def parse_all_sentences( argsdryrun, TOTALLINES ):
+    global sentences
+    if TOTALLINES==0:
+        TOTAL=len(sentences)
     else:
-        print()
-    sentences[i]=re.sub( '["]', '' ,sentences[i] )  # FIXME:  problem in google with unpaired "
-    ####### IF SENTENCE IS LONGER THAN 99
-    if len(sentences[i])>99:
-        splisen=sentences[i].split()
-        parts=''
-        j=0
-        for k,part in enumerate(splisen):
-            if len(parts)+len(part)<99-2:
-                parts=parts+' '+part
-            else:
-                j=j+1
-                print(i,'/',j,' ',parts)
+        TOTAL=TOTALLINES
+    sumoflines=0
+    for i in range(len(sentences)):
+        print( " "*int((99+2+9)),      end="\r" )
+        sentences[i]=re.sub( '["]', '' ,sentences[i] )  # FIXME:  problem in google with unpaired "
+        ####### IF SENTENCE IS LONGER THAN 99
+        if len(sentences[i])>99:
+            splisen=sentences[i].split()
+            parts=''
+            j=0
+            ##### all parts
+            for k,part in enumerate(splisen):
+                if len(parts)+len(part)<99-2:
+                    parts=parts+' '+part
+                else:
+                    j=j+1
+                    if not args.dryrun:
+                        print(i,'/',j,' ',parts)
+                        res=say_trans( parts,  '{:05d}'.format(i) )
+                        sumoflines=sumoflines+1
+                    else:
+                        print(  "{:5d}/{:5d} {:d} {}".format( sumoflines ,TOTAL,j, parts )  )
+                        sumoflines=sumoflines+1
+                    parts=part
+            if len(parts)>0:
                 if not args.dryrun:
                     res=say_trans( parts,  '{:05d}'.format(i) )
+                    sumoflines=sumoflines+1
                 else:
-                    print(parts)
-                parts=''
-        if len(parts)>0:
-            if not args.dryrun:
-                res=say_trans( parts,  '{:05d}'.format(i) )
-            else:
-                print(parts)
-            
-    ###### SHORTER 99
-    else:
-        if not args.dryrun:
-            res=say_trans( sentences[i],  '{:05d}'.format(i) )
+                    print(   "{:5d}/{:5d} {:d} {}".format( sumoflines,TOTAL,j+1, parts )  )
+                    sumoflines=sumoflines+1
+                
+        ###### SHORTER < 99
         else:
-            print( sentences[i] )
+               
+            if not args.dryrun:
+                res=say_trans( sentences[i],  '{:05d}'.format(i) )
+                sumoflines=sumoflines+1
+            else:
+                print(  "{:5d}/{:5d} {}{}".format( sumoflines,TOTAL, ' ', sentences[i] ) )
+                sumoflines=sumoflines+1
+
+        ### PERCENTAGE ###
+        perc=args.time*sumoflines/3600 / ( args.time*TOTAL/3600 )
+        if perc>1: perc=1
+        future=datetime.datetime.now() + datetime.timedelta(seconds=args.time*TOTAL)
+        print( "#"*int(perc*(99-10)),
+               "{:.1f}/{:.1f} h (@{})".format( args.time*sumoflines/3600 , args.time*TOTAL/3600 ,future.strftime("%H:%M") ),
+               end="\r" )
+        #time.sleep(0.005)
+    return sumoflines
+
+
+
+##########################################
+#
+# CONTINUATION OF MAIN 
+#
+##########################################
+
+sumoflines=parse_all_sentences( True , 0 )
+print()
+print('-------------------------------------------------')            
+print('total: {} lines   estimation:  {:.1f}'.format( sumoflines, args.time*sumoflines/3600 ) ,'hours' )
+
+if args.dryrun: quit()
+time.sleep(5)
+
+
+START=datetime.datetime.now()
+parse_all_sentences( True , sumoflines )
 
 # SIMPLE  join        
 #cat trans_rxu4l70y_0* > out.mp3   ; mp3val out.mp3 -f -nb 
+print( (datetime.datetime.now() - START).seconds )
