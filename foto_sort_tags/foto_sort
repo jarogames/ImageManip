@@ -1,0 +1,141 @@
+#!/bin/bash
+
+DRY=1
+if [ "$1" = "-f" ]; then
+    echo REAL RUN .........
+    DRY=0
+    sleep 0.5
+else
+    echo DRY RUN
+    sleep 0.5
+#    exit
+fi
+
+#########
+PICTURE_DESTINATION=$HOME/PICTURES
+mkdir -p ${PICTURE_DESTINATION}
+
+
+##########################
+# digikam:  create tags (home, work, other, slides)
+#           alt w, d, q, z
+#           Setting/ConfigDigik/Metadata ... save to files
+#
+#########################
+jpegoptim -v >/dev/null
+if [ "$?" = "0" ]; then
+    echo ... JPEG optimization -p -m50 for JPG [ok]
+else
+    echo install jpegoptim first...
+    exit
+fi
+
+
+############################### A
+A=(` find . -iname "*.jpg" | sort `)
+
+echo ================ begin `date` >> $HOME/foto_sort.log
+if [ "$DRY" = "0" ]; then
+    echo ================ REAL RUN =========== `date` >> $HOME/foto_sort.log
+fi    
+
+
+COUNT=${#A[@]}
+iCOUNT=0
+echo total $COUNT
+
+for i in "${A[@]}"; do
+    iCOUNT=$(( $iCOUNT + 1 ))
+    out=$i
+echo "$i -------------------------------------------------- $iCOUNT/$COUNT"
+
+###### IDENTIFY PART
+    
+    DATE=`identify -format "%[EXIF:DateTime]\n" $i | awk '{print $1}'`
+
+    if [ "$DATE" = "" ]; then
+	echo -e "\e[93mNo DateTime\e[39m"
+	echo $i :NO DateTime >>   $HOME/foto_sort.log
+	DATE=`identify -format "%[EXIF:DateTimeOriginal]\n" $i | awk '{print $1}'`
+	if [ "$DATE" = "" ]; then
+	    echo -e "\e[93mNo DateTimeOriginal\e[39m"
+	    echo $i :NO DateTimeOriginal >>   $HOME/foto_sort.log
+
+	    DATE=`identify -format "%[EXIF:DateTime(original)]\n" $i | awk '{print $1}'`
+
+	    if [ "$DATE" = "" ]; then
+		echo -e "\e[91mNo DateTime(original)\e[39m"
+		echo "$i :NO DateTime(original)" >>   $HOME/foto_sort.log
+	    fi
+	fi
+    fi
+
+
+########## DATE PART
+    
+    Y=`echo $DATE | awk -F ":" '{print $1}'`
+    M=`echo $DATE | awk -F ":" '{print $2}'`
+    KW=`identify -format "%[IPTC:2:25]" $i | awk -F ";" '{print $1}'`
+    RATIO=$(( `identify -format "%w/%h" $i` ))
+
+    ################# PRINT
+#    echo -n  $i $DATE $Y $M ... $KW ... /$RATIO/ :
+    echo -e "\e[90m $Y $M ... TAG=\e[97m\e[1m$KW\e[90m ... /PANO3=$RATIO/ \e[39m\e[21m"
+
+    
+    if [ "$KW" = "" ]; then
+	echo -e "\e[91mNO TAG "
+	echo $i :NO TAG >>   $HOME/foto_sort.log
+    fi
+
+########## jpegoptim part  OUT part ########
+    echo $i | grep JPG >/dev/null
+    if [ "$?" = "0" ]; then
+	#uppercase JPG
+	echo -e "\e[95m          jpegoptim -p -m50 $i \e[39m"
+	
+	if [ "$DRY" = "0" ]; then
+	    jpegoptim -p -m50 $i
+	fi
+	out=`basename $i .JPG`.jpg
+    else
+#	echo no jpegoptim $i
+	out=`basename $i .jpg`.jpg
+    fi
+
+
+    
+    if [ "$RATIO" -le "3" ]; then
+	DIRNAME=${PICTURE_DESTINATION}/${KW}_${Y}/${Y}_${M}_${KW}
+    else
+	DIRNAME=${PICTURE_DESTINATION}/${KW}_${Y}/${Y}_${M}_${KW}_pano
+    fi	
+    
+    if [ ! -e  $DIRNAME ]; then
+#	echo nex;   93 light yello
+	echo -e "\e[92m          mkdir -p  $DIRNAME \e[39m"
+	if [ "$DRY" = "0" ]; then
+	mkdir -p  $DIRNAME
+	fi
+    else
+	echo -n  ""
+    fi
+    
+    # lightgreen 92
+    echo -e "         \e[92m mv $i      $DIRNAME/$out \e[39m"
+    if [ "$DRY" = "0" ]; then
+        mv $i      $DIRNAME/$out
+    fi
+
+#########	  
+    echo $i ... $DIRNAME/$out >> $HOME/foto_sort.log
+
+
+done
+echo ================ end `date` >> $HOME/foto_sort.log
+
+if [ "$DRY" = "1" ]; then
+    echo " "
+    echo "$0 -f"
+    echo ... for REAL run \- not DRY run
+fi
