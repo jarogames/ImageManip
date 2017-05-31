@@ -32,7 +32,7 @@ def countdown(ti):
     global temp_name
     global args
     print('-'*ti, end='\r')
-    for i in range(ti):
+    for i in range( int(ti) ):
         print('#', end='')
         sys.stdout.flush()
         time.sleep( 1 )
@@ -44,6 +44,7 @@ def countdown(ti):
 def say_trans( phrase, ssi ):
     global temp_name
     global args
+    MEASURE=datetime.datetime.now()
     #trans -b -p -no-auto cs:cs "$PHRASE" -player "mpv --speed 0.9 --volume 100 -ao pcm:file=\"$DESTINATION/$PHRASE.wav\""
     #lame --scale 3 "$DESTINATION/$PHRASE.wav"
     #rm   "$DESTINATION/$PHRASE.wav"
@@ -57,7 +58,7 @@ def say_trans( phrase, ssi ):
         quit()
         return 1
     ##########################
-    CMD='lame --scale 2 '+DEST+'.wav'
+    CMD='lame --scale 2 '+DEST+'.wav  2>/dev/null'
     res=subprocess.check_call(CMD, shell=True)
     if res!=0:
         quit()
@@ -74,8 +75,9 @@ def say_trans( phrase, ssi ):
         quit()
         return 1
 
-
-    countdown( args.time )
+    remains=args.time - (datetime.datetime.now() - MEASURE).seconds
+    if remains<0: remains=0
+    countdown( remains )
     
     return 0
 
@@ -213,6 +215,8 @@ def parse_all_sentences( argsdryrun, TOTALLINES ):
     else:
         TOTAL=TOTALLINES
     sumoflines=0
+    ###print( 'TOTAL==', TOTAL )
+    time.sleep(1)
     for i in range(len(sentences)):
         print( " "*int((99+2+9)),      end="\r" )
         sentences[i]=re.sub( '["]', '' ,sentences[i] )  # FIXME:  problem in google with unpaired "
@@ -227,17 +231,18 @@ def parse_all_sentences( argsdryrun, TOTALLINES ):
                     parts=parts+' '+part
                 else:
                     j=j+1
-                    if not args.dryrun:
-                        print(i,'/',j,' ',parts)
-                        res=say_trans( parts,  '{:05d}'.format(i) )
+                    if not argsdryrun:
+                        print(  "{:5d}/{:5d} {:d} {}".format( sumoflines ,TOTAL,j, parts )  )
+                        res=say_trans( parts,  '{:05d}'.format( sumoflines ) )
                         sumoflines=sumoflines+1
                     else:
                         print(  "{:5d}/{:5d} {:d} {}".format( sumoflines ,TOTAL,j, parts )  )
                         sumoflines=sumoflines+1
                     parts=part
             if len(parts)>0:
-                if not args.dryrun:
-                    res=say_trans( parts,  '{:05d}'.format(i) )
+                if not argsdryrun:
+                    print(   "{:5d}/{:5d} {:d} {}".format( sumoflines,TOTAL,j+1, parts )  )
+                    res=say_trans( parts,  '{:05d}'.format( sumoflines ) )
                     sumoflines=sumoflines+1
                 else:
                     print(   "{:5d}/{:5d} {:d} {}".format( sumoflines,TOTAL,j+1, parts )  )
@@ -246,8 +251,9 @@ def parse_all_sentences( argsdryrun, TOTALLINES ):
         ###### SHORTER < 99
         else:
                
-            if not args.dryrun:
-                res=say_trans( sentences[i],  '{:05d}'.format(i) )
+            if not argsdryrun:
+                print(  "{:5d}/{:5d} {}{}".format( sumoflines,TOTAL, ' ', sentences[i] ) )
+                res=say_trans( sentences[i],  '{:05d}'.format( sumoflines ) )
                 sumoflines=sumoflines+1
             else:
                 print(  "{:5d}/{:5d} {}{}".format( sumoflines,TOTAL, ' ', sentences[i] ) )
@@ -257,9 +263,10 @@ def parse_all_sentences( argsdryrun, TOTALLINES ):
         perc=args.time*sumoflines/3600 / ( args.time*TOTAL/3600 )
         if perc>1: perc=1
         future=datetime.datetime.now() + datetime.timedelta(seconds=args.time*TOTAL)
+        ###print('FUTURE=',  future)
         print( "#"*int(perc*(99-10)),
                "{:.1f}/{:.1f} h (@{})".format( args.time*sumoflines/3600 , args.time*TOTAL/3600 ,future.strftime("%H:%M") ),
-               end="\r" )
+               end="\n" )
         #time.sleep(0.005)
     return sumoflines
 
@@ -281,7 +288,7 @@ time.sleep(5)
 
 
 START=datetime.datetime.now()
-parse_all_sentences( True , sumoflines )
+parse_all_sentences( False , sumoflines )
 
 # SIMPLE  join        
 #cat trans_rxu4l70y_0* > out.mp3   ; mp3val out.mp3 -f -nb 
