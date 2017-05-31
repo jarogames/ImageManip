@@ -18,10 +18,12 @@ parser=argparse.ArgumentParser(description="""
 
 
 parser.add_argument('-b','--book',  default="", help='',required=True)
-parser.add_argument('-c','--cross',   action="store_true" , help='')
+
+parser.add_argument('-c','--continu',  default=0,type=int, help='')
 parser.add_argument('-t','--time',  default=9, type=int, help='seconds between questions')
 parser.add_argument('-p','--path_to_save',  default="./", help='')
 parser.add_argument('-d','--dryrun', action="store_true", help='')
+
 args=parser.parse_args() 
 
 temp_name = next(tempfile._get_candidate_names())
@@ -51,33 +53,35 @@ def say_trans( phrase, ssi ):
     ###################################################
     DEST='/tmp/trans_'+temp_name+'_'+ssi
     ###################################################
-    print('i... saving',DEST)
-    CMD='trans -b -p -no-auto cs:cs "'+phrase+'" -player "mpv --speed 1.3 --volume 100 -ao pcm:file='+DEST+'.wav"'
-    res=subprocess.check_call(CMD, shell=True)
-    if res!=0:
-        quit()
-        return 1
-    ##########################
-    CMD='lame --scale 2 '+DEST+'.wav  2>/dev/null'
-    res=subprocess.check_call(CMD, shell=True)
-    if res!=0:
-        quit()
-        return 1
+    print('i... saving',DEST,' / ',args.continu, int(ssi) )
+    if args.continu<=int(ssi):
+        #########################    trans
+        CMD='trans -b -p -no-auto cs:cs "'+phrase+'" -player "mpv --speed 1.3 --volume 100 -ao pcm:file='+DEST+'.wav"'
+        res=subprocess.check_call(CMD, shell=True)
+        if res!=0:
+            quit()
+            return 1
+        ########################## LAME
+        CMD='lame --scale 2 '+DEST+'.wav  2>/dev/null'
+        res=subprocess.check_call(CMD, shell=True)
+        if res!=0:
+            quit()
+            return 1
     
-    ##########################
-    DEST=re.sub('\s','',DEST)
-    CMD='rm '+DEST+'.wav'
-    if DEST.find('/tmp')!=0:
-        print('!... security error')
-        quit()
-    res=subprocess.check_call(CMD, shell=True)
-    if res!=0:
-        quit()
-        return 1
+        ########################## rm WAV
+        DEST=re.sub('\s','',DEST)
+        CMD='rm '+DEST+'.wav'
+        if DEST.find('/tmp')!=0:
+            print('!... security error')
+            quit()
+        res=subprocess.check_call(CMD, shell=True)
+        if res!=0:
+            quit()
+            return 1
 
-    remains=args.time - (datetime.datetime.now() - MEASURE).seconds
-    if remains<0: remains=0
-    countdown( remains )
+        remains=args.time - (datetime.datetime.now() - MEASURE).seconds
+        if remains<0: remains=0
+        countdown( remains )
     
     return 0
 
