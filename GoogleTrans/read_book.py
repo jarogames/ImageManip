@@ -11,16 +11,19 @@ import time
 import sys       # flush
 import tempfile
 
+import datetime
 parser=argparse.ArgumentParser(description="""
  ... 
 """)
 
 
 parser.add_argument('-b','--book',  default="", help='',required=True)
-parser.add_argument('-c','--cross',   action="store_true" , help='')
+
+parser.add_argument('-c','--continu',  default=0,type=int, help='')
 parser.add_argument('-t','--time',  default=9, type=int, help='seconds between questions')
 parser.add_argument('-p','--path_to_save',  default="./", help='')
 parser.add_argument('-d','--dryrun', action="store_true", help='')
+
 args=parser.parse_args() 
 
 temp_name = next(tempfile._get_candidate_names())
@@ -31,7 +34,7 @@ def countdown(ti):
     global temp_name
     global args
     print('-'*ti, end='\r')
-    for i in range(ti):
+    for i in range( int(ti) ):
         print('#', end='')
         sys.stdout.flush()
         time.sleep( 1 )
@@ -43,38 +46,42 @@ def countdown(ti):
 def say_trans( phrase, ssi ):
     global temp_name
     global args
+    MEASURE=datetime.datetime.now()
     #trans -b -p -no-auto cs:cs "$PHRASE" -player "mpv --speed 0.9 --volume 100 -ao pcm:file=\"$DESTINATION/$PHRASE.wav\""
     #lame --scale 3 "$DESTINATION/$PHRASE.wav"
     #rm   "$DESTINATION/$PHRASE.wav"
     ###################################################
     DEST='/tmp/trans_'+temp_name+'_'+ssi
     ###################################################
-    print('i... saving',DEST)
-    CMD='trans -b -p -no-auto cs:cs "'+phrase+'" -player "mpv --speed 1.3 --volume 100 -ao pcm:file='+DEST+'.wav"'
-    res=subprocess.check_call(CMD, shell=True)
-    if res!=0:
-        quit()
-        return 1
-    ##########################
-    CMD='lame --scale 2 '+DEST+'.wav'
-    res=subprocess.check_call(CMD, shell=True)
-    if res!=0:
-        quit()
-        return 1
+    print('i... saving',DEST,' / ',args.continu, int(ssi) )
+    if args.continu<=int(ssi):
+        #########################    trans
+        CMD='trans -b -p -no-auto cs:cs "'+phrase+'" -player "mpv --speed 1.3 --volume 100 -ao pcm:file='+DEST+'.wav"'
+        res=subprocess.check_call(CMD, shell=True)
+        if res!=0:
+            quit()
+            return 1
+        ########################## LAME
+        CMD='lame --scale 2 '+DEST+'.wav  2>/dev/null'
+        res=subprocess.check_call(CMD, shell=True)
+        if res!=0:
+            quit()
+            return 1
     
-    ##########################
-    DEST=re.sub('\s','',DEST)
-    CMD='rm '+DEST+'.wav'
-    if DEST.find('/tmp')!=0:
-        print('!... security error')
-        quit()
-    res=subprocess.check_call(CMD, shell=True)
-    if res!=0:
-        quit()
-        return 1
+        ########################## rm WAV
+        DEST=re.sub('\s','',DEST)
+        CMD='rm '+DEST+'.wav'
+        if DEST.find('/tmp')!=0:
+            print('!... security error')
+            quit()
+        res=subprocess.check_call(CMD, shell=True)
+        if res!=0:
+            quit()
+            return 1
 
-
-    countdown( args.time )
+        remains=args.time - (datetime.datetime.now() - MEASURE).seconds
+        if remains<0: remains=0
+        countdown( remains )
     
     return 0
 
@@ -127,16 +134,34 @@ for i in range(len(direct)):
     print( i,' ',direct[i] )
 
 
+    
 ############################
 #  extrasct sentences #############################
 ###########################
 MAXDISP=70
 sentences=re.findall(r'([A-Z].+?[\.:?!])[\s"“\n]', text )
+for i,v in enumerate( sentences ):
+    if i+1<len(sentences):
+        if len(v)+len(sentences[i+1])<99:
+            sentences[i]=sentences[i]+' '+sentences[i+1]
+            del sentences[i+1]
+for i,v in enumerate( sentences ):
+    if i+1<len(sentences):
+        if len(v)+len(sentences[i+1])<99:
+            sentences[i]=sentences[i]+' '+sentences[i+1]
+            del sentences[i+1]
+for i,v in enumerate( sentences ):
+    if i+1<len(sentences):
+        if len(v)+len(sentences[i+1])<99:
+            sentences[i]=sentences[i]+' '+sentences[i+1]
+            del sentences[i+1]
+            
+############################
+# 
+##############
 print( len(sentences),'sentences:===============================' )
 if not args.dryrun:
     for i in range(len(sentences)):
-        #if i in direct:
-        #print('=DIR: =',end="")
         print( "{:4d}".format(i),' ',sentences[i][0:MAXDISP] ,end='')
         if len(sentences[i])>MAXDISP:
             print('...')
@@ -151,6 +176,7 @@ with open( args.book+'.v2', 'w' ) as fout:
 print('i...                 ...preparing diff............')
 ndif=0
 ndifim=0
+
 #
 #ndif=difflib.ndiff(  text, text2 )
 #print( ''.join(ndif)   )
@@ -174,48 +200,100 @@ ndifim=0
 print('Differences:',ndif,' / important:',ndifim)
 print()      
 
+
+
+
+
 #####################################
 #  FOR ALL SENTENCES
 #
 #####################################
 #quit()
-for i in range(len(sentences)):
-    #if i in direct:
-        #print('=DIR: =',end="")
-    #print( "{:4d}  L:{:3d}".format(i,len(sentences[i])),' ',sentences[i][0:MAXDISP] ,end='')
-    if len(sentences[i])>MAXDISP:
-        print('...')
+
+
+
+def parse_all_sentences( argsdryrun, TOTALLINES ):
+    global sentences
+    if TOTALLINES==0:
+        TOTAL=len(sentences)
     else:
-        print()
-    sentences[i]=re.sub( '["]', '' ,sentences[i] )  # FIXME:  problem in google with unpaired "
-    ####### IF SENTENCE IS LONGER THAN 99
-    if len(sentences[i])>99:
-        splisen=sentences[i].split()
-        parts=''
-        j=0
-        for k,part in enumerate(splisen):
-            if len(parts)+len(part)<99-2:
-                parts=parts+' '+part
-            else:
-                j=j+1
-                print(i,'/',j,' ',parts)
-                if not args.dryrun:
-                    res=say_trans( parts,  '{:05d}'.format(i) )
+        TOTAL=TOTALLINES
+    sumoflines=0
+    ###print( 'TOTAL==', TOTAL )
+    time.sleep(1)
+    for i in range(len(sentences)):
+        print( " "*int((99+2+9)),      end="\r" )
+        sentences[i]=re.sub( '["]', '' ,sentences[i] )  # FIXME:  problem in google with unpaired "
+        ####### IF SENTENCE IS LONGER THAN 99
+        if len(sentences[i])>99:
+            splisen=sentences[i].split()
+            parts=''
+            j=0
+            ##### all parts
+            for k,part in enumerate(splisen):
+                if len(parts)+len(part)<99-2:
+                    parts=parts+' '+part
                 else:
-                    print(parts)
-                parts=''
-        if len(parts)>0:
-            if not args.dryrun:
-                res=say_trans( parts,  '{:05d}'.format(i) )
-            else:
-                print(parts)
-            
-    ###### SHORTER 99
-    else:
-        if not args.dryrun:
-            res=say_trans( sentences[i],  '{:05d}'.format(i) )
+                    j=j+1
+                    if not argsdryrun:
+                        print(  "{:5d}/{:5d} {:d} {}".format( sumoflines ,TOTAL,j, parts )  )
+                        res=say_trans( parts,  '{:05d}'.format( sumoflines ) )
+                        sumoflines=sumoflines+1
+                    else:
+                        print(  "{:5d}/{:5d} {:d} {}".format( sumoflines ,TOTAL,j, parts )  )
+                        sumoflines=sumoflines+1
+                    parts=part
+            if len(parts)>0:
+                if not argsdryrun:
+                    print(   "{:5d}/{:5d} {:d} {}".format( sumoflines,TOTAL,j+1, parts )  )
+                    res=say_trans( parts,  '{:05d}'.format( sumoflines ) )
+                    sumoflines=sumoflines+1
+                else:
+                    print(   "{:5d}/{:5d} {:d} {}".format( sumoflines,TOTAL,j+1, parts )  )
+                    sumoflines=sumoflines+1
+                
+        ###### SHORTER < 99
         else:
-            print( sentences[i] )
+               
+            if not argsdryrun:
+                print(  "{:5d}/{:5d} {}{}".format( sumoflines,TOTAL, ' ', sentences[i] ) )
+                res=say_trans( sentences[i],  '{:05d}'.format( sumoflines ) )
+                sumoflines=sumoflines+1
+            else:
+                print(  "{:5d}/{:5d} {}{}".format( sumoflines,TOTAL, ' ', sentences[i] ) )
+                sumoflines=sumoflines+1
+
+        ### PERCENTAGE ###
+        perc=args.time*sumoflines/3600 / ( args.time*TOTAL/3600 )
+        if perc>1: perc=1
+        future=datetime.datetime.now() + datetime.timedelta(seconds=args.time*TOTAL)
+        ###print('FUTURE=',  future)
+        print( "#"*int(perc*(99-10)),
+               "{:.1f}/{:.1f} h (@{})".format( args.time*sumoflines/3600 , args.time*TOTAL/3600 ,future.strftime("%H:%M") ),
+               end="\n" )
+        #time.sleep(0.005)
+    return sumoflines
+
+
+
+##########################################
+#
+# CONTINUATION OF MAIN 
+#
+##########################################
+
+sumoflines=parse_all_sentences( True , 0 )
+print()
+print('-------------------------------------------------')            
+print('total: {} lines   estimation:  {:.1f}'.format( sumoflines, args.time*sumoflines/3600 ) ,'hours' )
+
+if args.dryrun: quit()
+time.sleep(5)
+
+
+START=datetime.datetime.now()
+parse_all_sentences( False , sumoflines )
 
 # SIMPLE  join        
 #cat trans_rxu4l70y_0* > out.mp3   ; mp3val out.mp3 -f -nb 
+print( (datetime.datetime.now() - START).seconds )
