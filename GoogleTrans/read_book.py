@@ -117,6 +117,8 @@ text=re.sub(r'\n',' ...\n',text)  # silence
 
 text=re.sub(r'\.\.\.\s+','...',text)  # silence
 
+text=re.sub(r"`","'",text)  # silence
+
 #print(text)
 print('=====================================================was mod')
 
