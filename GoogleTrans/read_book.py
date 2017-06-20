@@ -20,7 +20,7 @@ parser=argparse.ArgumentParser(description="""
 parser.add_argument('-b','--book',  default="", help='',required=True)
 
 parser.add_argument('-c','--continu',  default=0,type=int, help='')
-parser.add_argument('-t','--time',  default=9, type=int, help='seconds between questions')
+parser.add_argument('-t','--time',  default=14, type=int, help='seconds between questions')
 parser.add_argument('-p','--path_to_save',  default="./", help='')
 parser.add_argument('-d','--dryrun', action="store_true", help='')
 
@@ -57,14 +57,28 @@ def say_trans( phrase, ssi ):
     if args.continu<=int(ssi):
         #########################    trans
         CMD='trans -b -p -no-auto cs:cs "'+phrase+'" -player "mpv --speed 1.3 --volume 100 -ao pcm:file='+DEST+'.wav"'
-        res=subprocess.check_call(CMD, shell=True)
-        if res!=0:
-            quit()
-            return 1
+
+        ### HERE I have seen an error: I ADD TRY:
+        # this waits finishing the call
+        try:
+            res=subprocess.check_call(CMD, shell=True)
+        except subprocess.CalledProcessError, e:
+            print( '!...trans command ERROR', e.output  )
+            print('i... TRY ONCE MORE after 30 sec.')
+            time.sleep(30)
+            try:
+                res=subprocess.check_call(CMD, shell=True)
+            except subprocess.CalledProcessError, e:
+                print( '!...trans command ERROR', e.output  )
+                quit()
+                return 1
         ########################## LAME
-        CMD='lame --scale 2 '+DEST+'.wav  2>/dev/null'
+        #CMD='lame --scale 2 '+DEST+'.wav  2>/dev/null'
+        CMD='lame --scale 2 '+DEST+'.wav  '
+        #res=subprocess.check_call(CMD, shell=True)
         res=subprocess.check_call(CMD, shell=True)
         if res!=0:
+            print('!...LAME ERROR')
             quit()
             return 1
     
@@ -76,11 +90,13 @@ def say_trans( phrase, ssi ):
             quit()
         res=subprocess.check_call(CMD, shell=True)
         if res!=0:
+            print("!... RM ERROR")
             quit()
             return 1
 
         remains=args.time - (datetime.datetime.now() - MEASURE).seconds
         if remains<0: remains=0
+        print('countdown:')
         countdown( remains )
     
     return 0
@@ -224,10 +240,11 @@ def parse_all_sentences( argsdryrun, TOTALLINES ):
     ###print( 'TOTAL==', TOTAL )
     time.sleep(1)
     for i in range(len(sentences)):
-        print( " "*int((99+2+9)),      end="\r" )
+        print( " "*int((99+2+9)),      end="\n" )  # \r
         sentences[i]=re.sub( '["]', '' ,sentences[i] )  # FIXME:  problem in google with unpaired "
         ####### IF SENTENCE IS LONGER THAN 99
         if len(sentences[i])>99:
+            print("... >99")
             splisen=sentences[i].split()
             parts=''
             j=0
@@ -256,10 +273,13 @@ def parse_all_sentences( argsdryrun, TOTALLINES ):
                 
         ###### SHORTER < 99
         else:
+            print("... <99")
                
             if not argsdryrun:
                 print(  "{:5d}/{:5d} {}{}".format( sumoflines,TOTAL, ' ', sentences[i] ) )
+                print('...saying')
                 res=say_trans( sentences[i],  '{:05d}'.format( sumoflines ) )
+                print('...said')
                 sumoflines=sumoflines+1
             else:
                 print(  "{:5d}/{:5d} {}{}".format( sumoflines,TOTAL, ' ', sentences[i] ) )
@@ -297,5 +317,5 @@ START=datetime.datetime.now()
 parse_all_sentences( False , sumoflines )
 
 # SIMPLE  join        
-#cat trans_rxu4l70y_0* > out.mp3   ; mp3val out.mp3 -f -nb 
-print( (datetime.datetime.now() - START).seconds )
+print("\n\n cat trans_*.mp3 > out.mp3 \n\n  mp3val out.mp3 -f -nb \n\n ")
+print( (datetime.datetime.now() - START).seconds , 's  total time' )
