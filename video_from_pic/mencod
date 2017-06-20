@@ -1,0 +1,12 @@
+#!/bin/bash
+
+DIR=$1
+if [ -e "$DIR" ]; then
+
+ echo directory $DIR exists
+ mencoder "mf://$DIR/*.jpg" -mf fps=25 -o  $DIR.avi -ovc lavc
+
+else
+ echo directory $DIR NOT exists
+
+fi
