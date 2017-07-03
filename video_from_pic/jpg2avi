@@ -1,0 +1,21 @@
+#!/bin/bash
+
+#D=($( ls -1 | grep cam_ ))
+D=($(find . -iname "cam_*" -type d  | sort  ))
+
+OPTS="vcodec=mpeg4:vbitrate=1700"
+
+
+for i in "${D[@]}"; do
+    echo ====================================
+    echo i... JPG IN $i;
+    echo i... JPG IN $i;
+    echo i... JPG IN $i;
+    echo ====================================
+    if [ -e  $i.avi ]; then
+	echo !... $i.avi already exists
+    else
+	echo i... mencoder:
+	mencoder "mf://$i/*.jpg" -mf fps=25 -o $i.avi -ovc lavc -lavcopts $OPTS 2>/dev/null
+    fi
+done
