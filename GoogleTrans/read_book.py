@@ -12,6 +12,40 @@ import sys       # flush
 import tempfile
 
 import datetime
+
+import os
+import glob
+#  check file existence
+from pathlib import Path
+
+
+
+def findlastnum( tmpl ):
+    '''
+    tmpl ... template like trans_nsdvtkqr_00000.mp3
+    the function gives the last number existing
+    to be able to continue with the same  hash
+    '''
+    print('i... analyzing the template ',tmpl)
+    dirn=os.path.dirname( tmpl ) 
+    #if len(dirn)==0:
+    #    tmpl='/tmp/'+tmpl
+    #print( os.path.dirname( tmpl ) )
+    #print( os.path.basename( tmpl ) )
+    dirfil=os.path.splitext( tmpl )[0]
+    bases='_'.join( dirfil.split('_')[0:-1] ) +"_"
+    #print(bases)
+    #import glob
+    all=glob.glob( bases+'*mp3')
+    #print( sorted(all)[-1] )
+    las=sorted(all)[-1] 
+    lanum=os.path.splitext( las )[0].split('_')[-1]
+    hash1=os.path.splitext( las )[0].split('_')[-2]
+    print('i...   LSTNUMBER=',lanum)
+    return int(lanum),hash1
+
+
+
 parser=argparse.ArgumentParser(description="""
  ... 
 """)
@@ -19,15 +53,22 @@ parser=argparse.ArgumentParser(description="""
 
 parser.add_argument('-b','--book',  default="", help='',required=True)
 
-parser.add_argument('-c','--continu',  default=0,type=int, help='')
+parser.add_argument('-c','--continu',  default='',  help='-c trans_nsdvtkqr_00000.mp3')
+# -- FROM NOW:   -c  trans_nsdvtkqr_00000.mp3 - finds automatic
 parser.add_argument('-t','--time',  default=14, type=int, help='seconds between questions')
 parser.add_argument('-p','--path_to_save',  default="./", help='')
 parser.add_argument('-d','--dryrun', action="store_true", help='')
 
-args=parser.parse_args() 
+args=parser.parse_args()
 
+# --- continuation from filename
+argscontinu=0
 temp_name = next(tempfile._get_candidate_names())
-print(  temp_name )
+if len(args.continu)>0:
+    argscontinu,temp_name=findlastnum( args.continu)  # return number and hash
+
+print(  'i...   HASH NAME=',temp_name, ', number=', argscontinu )
+#quit()
 
 
 def countdown(ti):
@@ -42,6 +83,25 @@ def countdown(ti):
 
 
 
+def run_cmd_with_wait( CMD ):
+    ### HERE I have seen an error: I ADD TRY:
+    # this waits finishing the call
+    try:
+        res=subprocess.check_call(CMD+' >/dev/null 2>&1', shell=True)
+    except subprocess.CalledProcessError as e:
+        print('!... command ERROR', e.output  )
+        print('!...        ', CMD  )
+        print('i... TRY ONCE MORE after 50 sec.')
+        time.sleep( 50 )
+        try:
+            res=subprocess.check_call(CMD, shell=True)
+        except subprocess.CalledProcessError as e:
+            print( '!...trans command ERROR', e.output  )
+            if argscontinu>0:
+                print('i... INSTEAD OF QUIT - I RESTART')
+                os.execv(__file__, sys.argv)
+            quit()
+            return 1
     
 def say_trans( phrase, ssi ):
     global temp_name
@@ -51,43 +111,53 @@ def say_trans( phrase, ssi ):
     #lame --scale 3 "$DESTINATION/$PHRASE.wav"
     #rm   "$DESTINATION/$PHRASE.wav"
     ###################################################
-    DEST='/tmp/trans_'+temp_name+'_'+ssi
+    DEST='trans_'+temp_name+'_'+ssi
     ###################################################
-    print('i... saving',DEST,' / ',args.continu, int(ssi) )
-    if args.continu<=int(ssi):
+    print('i... saving',DEST+'.mp3         (',argscontinu, int(ssi),')' )
+    if argscontinu<=int(ssi):
         #########################    trans
         CMD='trans -b -p -no-auto cs:cs "'+phrase+'" -player "mpv --speed 1.3 --volume 100 -ao pcm:file='+DEST+'.wav"'
 
-        ### HERE I have seen an error: I ADD TRY:
-        # this waits finishing the call
-        try:
-            res=subprocess.check_call(CMD, shell=True)
-        except subprocess.CalledProcessError, e:
-            print( '!...trans command ERROR', e.output  )
-            print('i... TRY ONCE MORE after 30 sec.')
-            time.sleep(30)
-            try:
-                res=subprocess.check_call(CMD, shell=True)
-            except subprocess.CalledProcessError, e:
-                print( '!...trans command ERROR', e.output  )
+        run_cmd_with_wait( CMD )
+        my_file = Path(DEST+".wav")
+        if not my_file.is_file():
+            print('!... problem with wav file', DEST+".wav" )
+            time.sleep(20)
+            run_cmd_with_wait( CMD )
+            if not my_file.is_file():
+                print('!... 2nd problem with wav file', DEST+".wav" )
                 quit()
-                return 1
+        # ### HERE I have seen an error: I ADD TRY:
+        # # this waits finishing the call
+        # try:
+        #     res=subprocess.check_call(CMD, shell=True)
+        # except subprocess.CalledProcessError as e:
+        #     print( '!...trans command ERROR', e.output  )
+        #     print('i... TRY ONCE MORE after 30 sec.')
+        #     time.sleep(30)
+        #     try:
+        #         res=subprocess.check_call(CMD, shell=True)
+        #     except subprocess.CalledProcessError as e:
+        #         print( '!...trans command ERROR', e.output  )
+        #         quit()
+        #         return 1
         ########################## LAME
         #CMD='lame --scale 2 '+DEST+'.wav  2>/dev/null'
         CMD='lame --scale 2 '+DEST+'.wav  '
+        run_cmd_with_wait( CMD )
+        ####res=subprocess.check_call(CMD, shell=True)
         #res=subprocess.check_call(CMD, shell=True)
-        res=subprocess.check_call(CMD, shell=True)
-        if res!=0:
-            print('!...LAME ERROR')
-            quit()
-            return 1
-    
+        #if res!=0:
+        #    print('!...LAME ERROR')
+        #    quit()
+        #    return 1
+        #
         ########################## rm WAV
         DEST=re.sub('\s','',DEST)
         CMD='rm '+DEST+'.wav'
-        if DEST.find('/tmp')!=0:
-            print('!... security error')
-            quit()
+        #if DEST.find('/tmp')!=0:
+        #    print('!... security error')
+        #    quit()
         res=subprocess.check_call(CMD, shell=True)
         if res!=0:
             print("!... RM ERROR")
@@ -96,7 +166,7 @@ def say_trans( phrase, ssi ):
 
         remains=args.time - (datetime.datetime.now() - MEASURE).seconds
         if remains<0: remains=0
-        print('countdown:')
+        #print('countdown:')
         countdown( remains )
     
     return 0
@@ -133,7 +203,9 @@ text=re.sub(r'\n',' ...\n',text)  # silence
 
 text=re.sub(r'\.\.\.\s+','...',text)  # silence
 
-text=re.sub(r"`","'",text)  # silence
+text=re.sub(r"`","'",text)  # bad apostrophes crashed
+text=re.sub(r"/"," ",text)  # /NSA/ crashed trans
+
 
 #print(text)
 print('=====================================================was mod')
@@ -273,13 +345,13 @@ def parse_all_sentences( argsdryrun, TOTALLINES ):
                 
         ###### SHORTER < 99
         else:
-            print("... <99")
+            #print("... <99")
                
             if not argsdryrun:
                 print(  "{:5d}/{:5d} {}{}".format( sumoflines,TOTAL, ' ', sentences[i] ) )
-                print('...saying')
+                #print('...saying')
                 res=say_trans( sentences[i],  '{:05d}'.format( sumoflines ) )
-                print('...said')
+                #print('...said')
                 sumoflines=sumoflines+1
             else:
                 print(  "{:5d}/{:5d} {}{}".format( sumoflines,TOTAL, ' ', sentences[i] ) )
