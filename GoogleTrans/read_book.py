@@ -20,57 +20,6 @@ from pathlib import Path
 
 
 
-def findlastnum( tmpl ):
-    '''
-    tmpl ... template like trans_nsdvtkqr_00000.mp3
-    the function gives the last number existing
-    to be able to continue with the same  hash
-    '''
-    print('i... analyzing the template ',tmpl)
-    dirn=os.path.dirname( tmpl ) 
-    #if len(dirn)==0:
-    #    tmpl='/tmp/'+tmpl
-    #print( os.path.dirname( tmpl ) )
-    #print( os.path.basename( tmpl ) )
-    dirfil=os.path.splitext( tmpl )[0]
-    bases='_'.join( dirfil.split('_')[0:-1] ) +"_"
-    #print(bases)
-    #import glob
-    all=glob.glob( bases+'*mp3')
-    #print( sorted(all)[-1] )
-    las=sorted(all)[-1] 
-    lanum=os.path.splitext( las )[0].split('_')[-1]
-    hash1=os.path.splitext( las )[0].split('_')[-2]
-    print('i...   LSTNUMBER=',lanum)
-    return int(lanum),hash1
-
-
-
-parser=argparse.ArgumentParser(description="""
- ... 
-""")
-
-
-parser.add_argument('-b','--book',  default="", help='',required=True)
-
-parser.add_argument('-c','--continu',  default='',  help='-c trans_nsdvtkqr_00000.mp3')
-# -- FROM NOW:   -c  trans_nsdvtkqr_00000.mp3 - finds automatic
-parser.add_argument('-t','--time',  default=14, type=int, help='seconds between questions')
-parser.add_argument('-p','--path_to_save',  default="./", help='')
-parser.add_argument('-d','--dryrun', action="store_true", help='')
-
-args=parser.parse_args()
-
-# --- continuation from filename
-argscontinu=0
-temp_name = next(tempfile._get_candidate_names())
-if len(args.continu)>0:
-    argscontinu,temp_name=findlastnum( args.continu)  # return number and hash
-
-print(  'i...   HASH NAME=',temp_name, ', number=', argscontinu )
-#quit()
-
-
 def countdown(ti):
     global temp_name
     global args
@@ -117,6 +66,9 @@ def say_trans( phrase, ssi ):
     if argscontinu<=int(ssi):
         #########################    trans
         CMD='trans -b -p -no-auto cs:cs "'+phrase+'" -player "mpv --speed 1.3 --volume 100 -ao pcm:file='+DEST+'.wav"'
+        CMDEN='trans -b -p -no-auto en:en "'+phrase+'" -player "mpv --speed 1.3 --volume 100 -ao pcm:file='+DEST+'.wav"'
+        if args.english:
+            CMD=CMDEN
 
         run_cmd_with_wait( CMD )
         my_file = Path(DEST+".wav")
@@ -175,6 +127,38 @@ def say_trans( phrase, ssi ):
 
 
 
+def findlastnum( tmpl ):
+    '''
+    tmpl ... template like trans_nsdvtkqr_00000.mp3
+    the function gives the last number existing
+    to be able to continue with the same  hash
+    '''
+    print('i... analyzing the template filename: /'+tmpl+'/')
+    dirn=os.path.dirname( tmpl ) 
+    #if len(dirn)==0:
+    #    tmpl='/tmp/'+tmpl
+    #print( os.path.dirname( tmpl ) )
+    #print( os.path.basename( tmpl ) )
+    dirfil=os.path.splitext( tmpl )[0]
+    bases='_'.join( dirfil.split('_')[0:-1] ) +"_"
+    ##if len(bases)<2:
+    ##    print("!... /"+dirfil+"/ doesnot look as trans_000000.mp3 ... quiting")
+    ##    quit()
+    print(bases)
+    #import glob
+    all=glob.glob( bases+'*mp3')
+    if len(all)<1:
+        print("!... no mp3 files like",bases)
+        return 0,os.path.splitext( tmpl )[0].split('_')[-2]
+    #print( sorted(all)[-1] )
+    las=sorted(all)[-1] 
+    lanum=os.path.splitext( las )[0].split('_')[-1]
+    hash1=os.path.splitext( las )[0].split('_')[-2]
+    print('i...   LSTNUMBER=',lanum)
+    return int(lanum),hash1
+
+
+
 
 
 
@@ -184,9 +168,78 @@ def say_trans( phrase, ssi ):
 #  M A I N
 #
 ###########################################
+############################################
+#
+#  M A I N
+#
+###########################################
+############################################
+#
+#  M A I N
+#
+###########################################
+
+
+
+parser=argparse.ArgumentParser(description="""
+ ... 
+""")
+
+parser.add_argument('book',  default=""  )
+
+#parser.add_argument('-c','--continu',  default='last',  help='-c trans_nsdvtkqr_00000.mp3  OR -c ')
+parser.add_argument('-c','--continu',  default='',  help='-c trans_nsdvtkqr_00000.mp3  OR -c ', nargs="?")
+# -- FROM NOW:   -c  trans_nsdvtkqr_00000.mp3 - finds automatic
+parser.add_argument('-t','--time',  default=14, type=int, help='seconds between questions')
+parser.add_argument('-p','--path_to_save',  default="./", help='')
+parser.add_argument('-d','--dryrun', action="store_true", help='')
+parser.add_argument('-e','--english', action="store_true", help='use english to english read')
+
+args=parser.parse_args()
+
+
+###### --- continuation from filename     tmp HASH #########
+#   -c trans_00000.mp3
+#   -c : this will read .read_book.last
+argscontinu=0  # this is a number
+exitme=0
+if args.continu is None:
+    print("i... No arguments added to -c: using .read_book.last")
+    try:
+        with open(".read_book.last", "r" ) as f:
+            book1=f.readline()
+            print('i... my book and the last book: /{}/ /{}/'.format(args.book,book1.rstrip() )  )
+            if args.book!=book1.rstrip():
+                print("!... .read_book.last filename and current filenames differ! \nFIRST: rm .read_book.last")
+                exitme=1
+            args.continu=f.readline().rstrip()
+            print("i... new args.continu:",args.continu)
+    except:
+        print("!... file .read_book.last cannot be open")
+    finally:
+        if exitme==1: sys.exit(1)
+        
+  
+if not (args.continu is None) and args.continu!='':   # if there os args.continu:  take it from that
+    argscontinu,temp_name=findlastnum( args.continu)  # return number and hash
+else:
+    temp_name = next(tempfile._get_candidate_names())
+    print("i... new hash name created")
+print(  'i...   HASH NAME=',temp_name, ', number=', argscontinu )
+
+
+
+with open(".read_book.last", "w" ) as f:
+    f.write( args.book+"\n" )
+    f.write( "trans_"+temp_name+"_00000.mp3" + "\n")
+    print("i... .read_book.last was newly created")
+#quit()
+print("-----------------------------------------------------------------")
+time.sleep(2)
+    
+
 with open( args.book, "r" ) as f:
     text=f.read()
-
 #print(text)    
 
 badfstp=re.findall(r'\.\w', text )
@@ -389,5 +442,5 @@ START=datetime.datetime.now()
 parse_all_sentences( False , sumoflines )
 
 # SIMPLE  join        
-print("\n\n cat trans_*.mp3 > out.mp3 \n\n  mp3val out.mp3 -f -nb \n\n ")
+print("\n\ncat trans_"+temp_name+".mp3 > "+args.book+".mp3 \nmp3val "+args.book+".mp3 -f -nb \n\n ")
 print( (datetime.datetime.now() - START).seconds , 's  total time' )
