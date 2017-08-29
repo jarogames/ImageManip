@@ -28,7 +28,7 @@ def countdown(ti):
         print('#', end='')
         sys.stdout.flush()
         time.sleep( 1 )
-    print()
+    print("                    ",end="\r")
 
 
 
@@ -62,7 +62,8 @@ def say_trans( phrase, ssi ):
     ###################################################
     DEST='trans_'+temp_name+'_'+ssi
     ###################################################
-    print('i... saving',DEST+'.mp3         (',argscontinu, int(ssi),')' )
+    print('i... saving',DEST+'.mp3         (',argscontinu, int(ssi),')' , end="\r")
+    print('i... saving {}.mp3    ( restart from={} line={} )'.format(DEST,argscontinu,int(ssi))  , end="\r")
     if argscontinu<=int(ssi):
         #########################    trans
         CMD='trans -b -p -no-auto cs:cs "'+phrase+'" -player "mpv --speed 1.3 --volume 100 -ao pcm:file='+DEST+'.wav"'
@@ -190,7 +191,7 @@ parser.add_argument('book',  default=""  )
 #parser.add_argument('-c','--continu',  default='last',  help='-c trans_nsdvtkqr_00000.mp3  OR -c ')
 parser.add_argument('-c','--continu',  default='',  help='-c trans_nsdvtkqr_00000.mp3  OR -c ', nargs="?")
 # -- FROM NOW:   -c  trans_nsdvtkqr_00000.mp3 - finds automatic
-parser.add_argument('-t','--time',  default=14, type=int, help='seconds between questions')
+parser.add_argument('-t','--time',  default=9, type=int, help='seconds between questions')
 parser.add_argument('-p','--path_to_save',  default="./", help='')
 parser.add_argument('-d','--dryrun', action="store_true", help='')
 parser.add_argument('-e','--english', action="store_true", help='use english to english read')
@@ -369,7 +370,7 @@ def parse_all_sentences( argsdryrun, TOTALLINES ):
         sentences[i]=re.sub( '["]', '' ,sentences[i] )  # FIXME:  problem in google with unpaired "
         ####### IF SENTENCE IS LONGER THAN 99
         if len(sentences[i])>99:
-            print("... >99")
+            print("multipart >99:")
             splisen=sentences[i].split()
             parts=''
             j=0
@@ -415,9 +416,10 @@ def parse_all_sentences( argsdryrun, TOTALLINES ):
         if perc>1: perc=1
         future=datetime.datetime.now() + datetime.timedelta(seconds=args.time*TOTAL)
         ###print('FUTURE=',  future)
+        # PROGRESS BAR
+        print(" "*int(1*(99-10)), end="\r")
         print( "#"*int(perc*(99-10)),
-               "{:.1f}/{:.1f} h (@{})".format( args.time*sumoflines/3600 , args.time*TOTAL/3600 ,future.strftime("%H:%M") ),
-               end="\n" )
+               "{:.1f}/{:.1f} h (@{}) ".format( args.time*sumoflines/3600 , args.time*TOTAL/3600 ,future.strftime("%H:%M") )   , end="" )
         #time.sleep(0.005)
     return sumoflines
 
@@ -442,5 +444,10 @@ START=datetime.datetime.now()
 parse_all_sentences( False , sumoflines )
 
 # SIMPLE  join        
-print("\n\ncat trans_"+temp_name+".mp3 > "+args.book+".mp3 \nmp3val "+args.book+".mp3 -f -nb \n\n ")
-print( (datetime.datetime.now() - START).seconds , 's  total time' )
+print("\n\ncat trans_"+temp_name+".mp3 > \""+args.book+".mp3\"")
+print("\n\nmp3val "+args.book+".mp3 -f -nb \n\n ")
+print("\n\ncat trans_"+temp_name+".mp3 > \""+os.path.basename(args.book)+".mp3\"")
+print("\n\nmp3val "+os.path.basename(args.book)+".mp3\" -f -nb\n")
+
+tmdelta=(datetime.datetime.now() - START)
+print( str(tmdelta) , '  total time' )
