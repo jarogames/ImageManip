@@ -20,15 +20,21 @@ from pathlib import Path
 
 
 
-def countdown(ti):
+def countdown(ti , ssi):
     global temp_name
     global args
-    print('-'*ti, end='\r')
+    DEST='trans_'+temp_name+'_'+ssi
+    print('i... saving {}.mp3    ( restart from={} line={} )'.format(DEST,argscontinu,int(ssi))  , end="\r")
     for i in range( int(ti) ):
-        print('#', end='')
-        sys.stdout.flush()
+        print('{:02d} '.format( ti-i ), end='\r')
+        #sys.stdout.flush()
         time.sleep( 1 )
-    print("                    ",end="\r")
+    #print('-'*ti, end='\r')
+    #for i in range( int(ti) ):
+    #    print('#', end='')
+    #    sys.stdout.flush()
+    #    time.sleep( 1 )
+    #print("                    ",end="\r")
 
 
 
@@ -62,8 +68,8 @@ def say_trans( phrase, ssi ):
     ###################################################
     DEST='trans_'+temp_name+'_'+ssi
     ###################################################
-    print('i... saving',DEST+'.mp3         (',argscontinu, int(ssi),')' , end="\r")
-    print('i... saving {}.mp3    ( restart from={} line={} )'.format(DEST,argscontinu,int(ssi))  , end="\r")
+    ###print('i... saving',DEST+'.mp3         (',argscontinu, int(ssi),')' , end="\r")
+    #print('i... saving {}.mp3    ( restart from={} line={} )'.format(DEST,argscontinu,int(ssi))  , end="\r")
     if argscontinu<=int(ssi):
         #########################    trans
         CMD='trans -b -p -no-auto cs:cs "'+phrase+'" -player "mpv --speed 1.3 --volume 100 -ao pcm:file='+DEST+'.wav"'
@@ -120,7 +126,7 @@ def say_trans( phrase, ssi ):
         remains=args.time - (datetime.datetime.now() - MEASURE).seconds
         if remains<0: remains=0
         #print('countdown:')
-        countdown( remains )
+        countdown( remains ,ssi )
     
     return 0
 
@@ -236,7 +242,7 @@ with open(".read_book.last", "w" ) as f:
     print("i... .read_book.last was newly created")
 #quit()
 print("-----------------------------------------------------------------")
-time.sleep(2)
+time.sleep(0.5)
     
 
 with open( args.book, "r" ) as f:
@@ -367,10 +373,13 @@ def parse_all_sentences( argsdryrun, TOTALLINES ):
     time.sleep(1)
     for i in range(len(sentences)):
         print( " "*int((99+2+9)),      end="\n" )  # \r
+
+
+        
         sentences[i]=re.sub( '["]', '' ,sentences[i] )  # FIXME:  problem in google with unpaired "
         ####### IF SENTENCE IS LONGER THAN 99
         if len(sentences[i])>99:
-            print("multipart >99:")
+            #print("multipart >99:")
             splisen=sentences[i].split()
             parts=''
             j=0
@@ -411,6 +420,8 @@ def parse_all_sentences( argsdryrun, TOTALLINES ):
                 print(  "{:5d}/{:5d} {}{}".format( sumoflines,TOTAL, ' ', sentences[i] ) )
                 sumoflines=sumoflines+1
 
+
+                
         ### PERCENTAGE ###
         perc=args.time*sumoflines/3600 / ( args.time*TOTAL/3600 )
         if perc>1: perc=1
@@ -420,8 +431,13 @@ def parse_all_sentences( argsdryrun, TOTALLINES ):
         print(" "*int(1*(99-10)), end="\r")
         print( "#"*int(perc*(99-10)),
                "{:.1f}/{:.1f} h (@{}) ".format( args.time*sumoflines/3600 , args.time*TOTAL/3600 ,future.strftime("%H:%M") )   , end="" )
+                
+        #print(end="\r")
         #time.sleep(0.005)
     return sumoflines
+
+
+
 
 
 
@@ -437,7 +453,7 @@ print('-------------------------------------------------')
 print('total: {} lines   estimation:  {:.1f}'.format( sumoflines, args.time*sumoflines/3600 ) ,'hours' )
 
 if args.dryrun: quit()
-time.sleep(5)
+time.sleep(0.5)
 
 
 START=datetime.datetime.now()
