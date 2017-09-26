@@ -1,0 +1,63 @@
+#!/bin/bash
+
+function statistics(){
+
+echo -n SIZE of MOV in . :
+SMOV=`find . -iname "*.MOV" -printf "%s\n" | awk '{a=a+$1;} END {print a/1024/1024 }'`
+NMOV=( `find . -iname "*.MOV" -printf "%s\n"` )
+echo $SMOV MB in ${#NMOV[@]} files
+
+echo -n SIZE of mkv in . :
+Smkv=`find . -iname "*.mkv" -printf "%s\n" | awk '{a=a+$1;} END {print a/1024/1024 }'`
+Nmkv=( `find . -iname "*.mkv" -printf "%s\n"` )
+echo $Smkv MB in ${#Nmkv[@]} files
+
+echo -n SIZE of JPG in . :
+SJPG=`find . -iname "*.JPG" -printf "%s\n" | awk '{a=a+$1;} END {print a/1024/1024 }'`
+NJPG=( `find . -iname "*.JPG" -printf "%s\n"` )
+echo $SJPG MB in ${#NJPG[@]} files
+
+echo total: `echo  $SJPG + $Smkv + $SMOV | bc` MB
+}
+
+
+
+dupl=0
+unic=0
+# look for duplic
+#
+listmkv=$( find . -iname "*.MOV" )
+#echo $listmkv
+for i in ${listmkv}; do
+ filename=$(basename "$i")
+ etension="${filename##*.}"
+ filename="${filename%.*}"
+ 
+ ##noex=`dirname $i .mkv`
+ echo   \# $filename:-----------------
+ #find .  \( -iname "$i"-o -iname "$i.MOV" \) -printf "%p\n"
+ fres=( `find .   -iname "$filename*" -printf "%p\n"` )
+ if [ "${#fres[@]}" -gt "1" ]; then
+   #echo delete $filename.MOV
+   echo mpv ${fres[@]}  #rm $i #   ${#fres[@]}
+   dupl=$(( $dupl + 1 ))
+   else
+    echo ./mov2mkv ${fres[@]} #   ${#fres[@]}
+   unic=$(( $unic + 1 ))
+   fi	
+ #echo 
+done
+echo $dupl .MOV files can be deleted as they have .mkv
+echo $unic .MOV files need to be converted
+
+echo 
+######## show files ########
+statistics
+echo disiz: `du -hs .`
+echo
+echo LAST mkv FILE MODIFIED \( for a case of interrupted conversion \)
+ find . \( -iname "*.mkv" \) -printf "%CY%Cm%Cd_%CH%CM %p\n" | sort | tail -2
+echo ... MOV.mp4 unfinished files:
+ find . \( -iname "*.MOV.mp4" \) -printf "%CY%Cm%Cd_%CH%CM %p\n" | sort | tail -2
+
+ 
