@@ -21,6 +21,7 @@ echo total: `echo  $SJPG + $Smkv + $SMOV | bc` MB
 }
 
 
+echo ===============================================================
 
 dupl=0
 unic=0
@@ -39,7 +40,9 @@ for i in ${listmkv}; do
  fres=( `find .   -iname "$filename*" -printf "%p\n"` )
  if [ "${#fres[@]}" -gt "1" ]; then
    #echo delete $filename.MOV
-   echo mpv ${fres[@]}  #rm $i #   ${#fres[@]}
+     echo mpv ${fres[@]}
+     echo rm $i \; #   ${#fres[@]}
+     
    dupl=$(( $dupl + 1 ))
    else
     echo ./mov2mkv ${fres[@]} #   ${#fres[@]}
