@@ -23,7 +23,7 @@ from pathlib import Path
 def countdown(ti , ssi):
     global temp_name
     global args
-    DEST='trans_'+temp_name+'_'+ssi
+    DEST='ztrans_'+temp_name+'_'+ssi
     print('i... saving {}.mp3    ( restart from={} line={} )'.format(DEST,argscontinu,int(ssi))  , end="\r")
     for i in range( int(ti) ):
         print('{:02d} '.format( ti-i ), end='\r')
@@ -66,7 +66,7 @@ def say_trans( phrase, ssi ):
     #lame --scale 3 "$DESTINATION/$PHRASE.wav"
     #rm   "$DESTINATION/$PHRASE.wav"
     ###################################################
-    DEST='trans_'+temp_name+'_'+ssi
+    DEST='ztrans_'+temp_name+'_'+ssi
     ###################################################
     ###print('i... saving',DEST+'.mp3         (',argscontinu, int(ssi),')' , end="\r")
     #print('i... saving {}.mp3    ( restart from={} line={} )'.format(DEST,argscontinu,int(ssi))  , end="\r")
@@ -136,7 +136,7 @@ def say_trans( phrase, ssi ):
 
 def findlastnum( tmpl ):
     '''
-    tmpl ... template like trans_nsdvtkqr_00000.mp3
+    tmpl ... template like ztrans_nsdvtkqr_00000.mp3
     the function gives the last number existing
     to be able to continue with the same  hash
     '''
@@ -149,7 +149,7 @@ def findlastnum( tmpl ):
     dirfil=os.path.splitext( tmpl )[0]
     bases='_'.join( dirfil.split('_')[0:-1] ) +"_"
     ##if len(bases)<2:
-    ##    print("!... /"+dirfil+"/ doesnot look as trans_000000.mp3 ... quiting")
+    ##    print("!... /"+dirfil+"/ doesnot look as ztrans_000000.mp3 ... quiting")
     ##    quit()
     print(bases)
     #import glob
@@ -194,9 +194,9 @@ parser=argparse.ArgumentParser(description="""
 
 parser.add_argument('book',  default=""  )
 
-#parser.add_argument('-c','--continu',  default='last',  help='-c trans_nsdvtkqr_00000.mp3  OR -c ')
-parser.add_argument('-c','--continu',  default='',  help='-c trans_nsdvtkqr_00000.mp3  OR -c ', nargs="?")
-# -- FROM NOW:   -c  trans_nsdvtkqr_00000.mp3 - finds automatic
+#parser.add_argument('-c','--continu',  default='last',  help='-c ztrans_nsdvtkqr_00000.mp3  OR -c ')
+parser.add_argument('-c','--continu',  default='',  help='-c ztrans_nsdvtkqr_00000.mp3  OR -c ', nargs="?")
+# -- FROM NOW:   -c  ztrans_nsdvtkqr_00000.mp3 - finds automatic
 parser.add_argument('-t','--time',  default=9, type=int, help='seconds between questions')
 parser.add_argument('-p','--path_to_save',  default="./", help='')
 parser.add_argument('-d','--dryrun', action="store_true", help='')
@@ -206,7 +206,7 @@ args=parser.parse_args()
 
 
 ###### --- continuation from filename     tmp HASH #########
-#   -c trans_00000.mp3
+#   -c ztrans_00000.mp3
 #   -c : this will read .read_book.last
 argscontinu=0  # this is a number
 exitme=0
@@ -238,7 +238,7 @@ print(  'i...   HASH NAME=',temp_name, ', number=', argscontinu )
 
 with open(".read_book.last", "w" ) as f:
     f.write( args.book+"\n" )
-    f.write( "trans_"+temp_name+"_00000.mp3" + "\n")
+    f.write( "ztrans_"+temp_name+"_00000.mp3" + "\n")
     print("i... .read_book.last was newly created")
 #quit()
 print("-----------------------------------------------------------------")
@@ -460,10 +460,10 @@ START=datetime.datetime.now()
 parse_all_sentences( False , sumoflines )
 
 # SIMPLE  join        
-print("\n\ncat trans_"+temp_name+".mp3 > \""+args.book+".mp3\"")
+print("\n\ncat ztrans_"+temp_name+"*.mp3 > \""+args.book+".mp3\"")
 print("\n\nmp3val "+args.book+".mp3 -f -nb \n\n ")
-print("\n\ncat trans_"+temp_name+".mp3 > \""+os.path.basename(args.book)+".mp3\"")
-print("\n\nmp3val "+os.path.basename(args.book)+".mp3\" -f -nb\n")
+print("\n\ncat ztrans_"+temp_name+"*.mp3 > \""+os.path.basename(args.book)+".mp3\"")
+print("\n\nmp3val \""+os.path.basename(args.book)+".mp3\" -f -nb\n")
 
 tmdelta=(datetime.datetime.now() - START)
 print( str(tmdelta) , '  total time' )
