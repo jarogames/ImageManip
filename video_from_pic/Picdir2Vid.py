@@ -4,10 +4,24 @@ import os
 import datetime
 import cv2
 import numpy as np
+import argparse
+
+
+#####################################
+#  ARGUMENTS
+#####################################
+parser=argparse.ArgumentParser(description="")
+parser.add_argument('-d','--diveinto', required=True, help='')
+parser.add_argument('--debug', action="store_true", help='')#,required=True
+args=parser.parse_args()
+
 
 def ConvertDir2Avi( dirn ):
     jpgs=sorted( glob.glob(dirn+"/*.jpg" ) )
-    print("i... converting ", dirn," ",len(jpgs),"images")
+    if len(jpgs)<3:
+        print("+... not enough jpgs")
+        return
+    print("i... checking    ", dirn," ",len(jpgs),"images")
     j=0
     hmax,wmax=0,0
     for i in jpgs:
@@ -19,12 +33,16 @@ def ConvertDir2Avi( dirn ):
         width =  np.size(image, 1)
         if wmax<width:wmax=width
         if hmax<height:hmax=height
-    print("WxH = ",wmax,"x",hmax)
+    print("\nWxH = ",wmax,"x",hmax)
 
-    
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    out = cv2.VideoWriter( dirn+".avi", fourcc, 10, 
+
+    dirnavi=dirn+".avi"
+    print("i... converting to  ", dirnavi," ",len(jpgs),"images")
+    #fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+    out = cv2.VideoWriter( dirnavi, fourcc, 10, 
                          (wmax,hmax) )
+    
     j=0
     for i in jpgs:
         j=j+1
@@ -38,20 +56,22 @@ def ConvertDir2Avi( dirn ):
 
 
     
-print("i... ")
 TODAY=datetime.datetime.now()
 TODAY=TODAY.strftime("%Y%m%d")
 
 PATH="~/.motion/*"
+PATH=args.diveinto
 PATH=os.path.expanduser(PATH)
+if PATH[-1]!="/": PATH=PATH+"/"
 
-for i in glob.glob(PATH):
-    if os.path.isdir(i) and len(i)>7:
+print("i... ready to convert @",PATH,"  now=",TODAY)
+
+for i in glob.glob(PATH+"*"):
+    if os.path.isdir(i):
         if os.path.isfile( i+".avi" ):
-            print("!... AVI already exists",i)
+            print("|... AVI already exists",i)
             continue
         if i.find( TODAY )>=0:
-            print("!... not this",i)
+            print("|--- not this",i)
             continue
         ConvertDir2Avi( i )
-        
