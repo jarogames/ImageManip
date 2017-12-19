@@ -7,31 +7,47 @@ if [ "$?" != "0" ]; then
 fi
 
 
-
+# ARGUMENTS ARE ALL JPGS OR directories????
 SIZE=36
 b=( "$@" )
 
-echo  "${b[0]}" | grep .jpg
-if [ "$?" != "0" ]; then
+dirs=0
+if [ -d  "${b[0]}" ]; then
+    echo ... directories ...........
+    dirs=1
+    # i accept  only 1st parameter and list under dir
+    b2=( `ls -d "${b[0]}"/*.jpg ` )
+    echo .... i listed b2 in ${b[0]} directory
+else
+
+ echo  "${b[0]}" | grep .jpg
+ if [ "$?" != "0" ]; then
     echo not jpg
     exit
+ fi
+ b2=$b
 fi
+# fi ... not directories
+
 
 #echo basename ${b[0]} .jpg
 NAME1=`basename ${b[0]}`
-
 NAME=`basename $NAME1 .jpg`
 
 P2W="P2W_"
 PAT=""
 
 
+
 echo ===============================================================
 echo .     PHASE 1 $NAME
 echo ===============================================================
 CNT=0
-TOT=${#b[@]}
-for a in ${b[@]}; do
+TOT=${#b2[@]}
+echo ...... total files = $TOT ... ${b2[0]}
+#exit
+
+for a in ${b2[@]}; do
     BN=`basename $a`
     DN=`dirname $a`
     label=`basename $a .jpg`
