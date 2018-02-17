@@ -8,9 +8,10 @@ import argparse
 import os
 import glob
 import subprocess
-parser=argparse.ArgumentParser(description="""
+parser=argparse.ArgumentParser(description="",usage="""
  ... 
-""")
+""",
+ formatter_class=argparse.RawTextHelpFormatter)
 
 parser.add_argument('-d','--diveinto', default="", help='', required=True)
 args=parser.parse_args()

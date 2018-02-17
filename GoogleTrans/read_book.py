@@ -197,9 +197,10 @@ def findlastnum( tmpl ):
 
 
 
-parser=argparse.ArgumentParser(description="""
+parser=argparse.ArgumentParser(description="",usage="""
  ... 
-""")
+""",
+ formatter_class=argparse.RawTextHelpFormatter)
 
 parser.add_argument('book',  default=""  )
 
@@ -499,9 +500,9 @@ START=datetime.datetime.now()
 parse_all_sentences( False , sumoflines )
 
 # SIMPLE  join        
-print("\n\ncat ztrans_"+temp_name+"*.mp3 > \""+args.book+".mp3\"")
+print("\n\ncat READBOOK/ztrans_"+temp_name+"*.mp3 > \""+args.book+".mp3\"")
 print("\n\nmp3val "+args.book+".mp3 -f -nb \n\n ")
-print("\n\ncat ztrans_"+temp_name+"*.mp3 > \""+os.path.basename(args.book)+".mp3\"")
+print("\n\ncat READBOOK/ztrans_"+temp_name+"*.mp3 > \""+os.path.basename(args.book)+".mp3\"")
 print("\n\nmp3val \""+os.path.basename(args.book)+".mp3\" -f -nb\n")
 
 tmdelta=(datetime.datetime.now() - START)
