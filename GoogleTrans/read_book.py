@@ -23,7 +23,7 @@ from pathlib import Path
 def countdown(ti , ssi):
     global temp_name
     global args
-    DEST='trans_'+temp_name+'_'+ssi
+    DEST='ztrans_'+temp_name+'_'+ssi
     print('i... saving {}.mp3    ( restart from={} line={} )'.format(DEST,argscontinu,int(ssi))  , end="\r")
     for i in range( int(ti) ):
         print('{:02d} '.format( ti-i ), end='\r')
@@ -41,23 +41,32 @@ def countdown(ti , ssi):
 def run_cmd_with_wait( CMD ):
     ### HERE I have seen an error: I ADD TRY:
     # this waits finishing the call
+    good=False
     try:
         res=subprocess.check_call(CMD+' >/dev/null 2>&1', shell=True)
-    except subprocess.CalledProcessError as e:
-        print('!... command ERROR', e.output  )
+        #print("\n"+CMD)
+        #res=subprocess.check_call(CMD , shell=True)
+        good=True
+    #except subprocess.CalledProcessError as e:
+    except:
+        print('!... command ERROR' )
         print('!...        ', CMD  )
         print('i... TRY ONCE MORE after 50 sec.')
         time.sleep( 50 )
-        try:
-            res=subprocess.check_call(CMD, shell=True)
-        except subprocess.CalledProcessError as e:
-            print( '!...trans command ERROR', e.output  )
-            if argscontinu>0:
-                print('i... INSTEAD OF QUIT - I RESTART')
-                os.execv(__file__, sys.argv)
-            quit()
-            return 1
-    
+    if good: return  0
+    try:
+        res=subprocess.check_call(CMD, shell=True)
+    except subprocess.CalledProcessError as e:
+        print( '!...trans command ERROR', e.output  )
+        if argscontinu>0:
+            print('i... INSTEAD OF QUIT - I RESTART')
+            os.execv(__file__, sys.argv)
+        quit()
+        return 1
+
+
+
+        
 def say_trans( phrase, ssi ):
     global temp_name
     global args
@@ -66,7 +75,7 @@ def say_trans( phrase, ssi ):
     #lame --scale 3 "$DESTINATION/$PHRASE.wav"
     #rm   "$DESTINATION/$PHRASE.wav"
     ###################################################
-    DEST='trans_'+temp_name+'_'+ssi
+    DEST='READBOOK/ztrans_'+temp_name+'_'+ssi
     ###################################################
     ###print('i... saving',DEST+'.mp3         (',argscontinu, int(ssi),')' , end="\r")
     #print('i... saving {}.mp3    ( restart from={} line={} )'.format(DEST,argscontinu,int(ssi))  , end="\r")
@@ -136,7 +145,7 @@ def say_trans( phrase, ssi ):
 
 def findlastnum( tmpl ):
     '''
-    tmpl ... template like trans_nsdvtkqr_00000.mp3
+    tmpl ... template like ztrans_nsdvtkqr_00000.mp3
     the function gives the last number existing
     to be able to continue with the same  hash
     '''
@@ -149,7 +158,7 @@ def findlastnum( tmpl ):
     dirfil=os.path.splitext( tmpl )[0]
     bases='_'.join( dirfil.split('_')[0:-1] ) +"_"
     ##if len(bases)<2:
-    ##    print("!... /"+dirfil+"/ doesnot look as trans_000000.mp3 ... quiting")
+    ##    print("!... /"+dirfil+"/ doesnot look as ztrans_000000.mp3 ... quiting")
     ##    quit()
     print(bases)
     #import glob
@@ -188,15 +197,15 @@ def findlastnum( tmpl ):
 
 
 
-parser=argparse.ArgumentParser(description="""
+parser=argparse.ArgumentParser(description="",usage="""
  ... 
-""")
+""",
+ formatter_class=argparse.RawTextHelpFormatter)
 
 parser.add_argument('book',  default=""  )
 
-#parser.add_argument('-c','--continu',  default='last',  help='-c trans_nsdvtkqr_00000.mp3  OR -c ')
-parser.add_argument('-c','--continu',  default='',  help='-c trans_nsdvtkqr_00000.mp3  OR -c ', nargs="?")
-# -- FROM NOW:   -c  trans_nsdvtkqr_00000.mp3 - finds automatic
+parser.add_argument('-c','--continu',  default='',  help='-c ztrans_nsdvtkqr_00000.mp3  OR -c ', nargs="?")
+# -- FROM NOW:   -c  ztrans_nsdvtkqr_00000.mp3 - finds automatic
 parser.add_argument('-t','--time',  default=9, type=int, help='seconds between questions')
 parser.add_argument('-p','--path_to_save',  default="./", help='')
 parser.add_argument('-d','--dryrun', action="store_true", help='')
@@ -205,8 +214,13 @@ parser.add_argument('-e','--english', action="store_true", help='use english to 
 args=parser.parse_args()
 
 
+
+if not os.path.exists: os.mkdir("READBOOK")
+
+############################################################
 ###### --- continuation from filename     tmp HASH #########
-#   -c trans_00000.mp3
+############################################################
+#   -c ztrans_00000.mp3
 #   -c : this will read .read_book.last
 argscontinu=0  # this is a number
 exitme=0
@@ -226,7 +240,8 @@ if args.continu is None:
     finally:
         if exitme==1: sys.exit(1)
         
-  
+
+        
 if not (args.continu is None) and args.continu!='':   # if there os args.continu:  take it from that
     argscontinu,temp_name=findlastnum( args.continu)  # return number and hash
 else:
@@ -238,17 +253,60 @@ print(  'i...   HASH NAME=',temp_name, ', number=', argscontinu )
 
 with open(".read_book.last", "w" ) as f:
     f.write( args.book+"\n" )
-    f.write( "trans_"+temp_name+"_00000.mp3" + "\n")
+    f.write( "ztrans_"+temp_name+"_00000.mp3" + "\n")
     print("i... .read_book.last was newly created")
-#quit()
-print("-----------------------------------------------------------------")
-time.sleep(0.5)
     
+############################################# CONTINU  END
+############################################# CONTINU  END
+############################################# CONTINU  END
 
-with open( args.book, "r" ) as f:
-    text=f.read()
-#print(text)    
 
+
+
+
+#######################################
+#
+#  OPEN   TEXT 
+#
+#######################################
+#with open( args.book, "r" ) as f:
+#    text=f.read()
+
+
+with open( args.book, 'rb' ) as f:
+    text=f.read().decode('utf8')
+
+    ####################### some books have strange zh sh 
+for i in range(len(text)):
+    if ord(text[i])==158:   # zh
+        text=text.replace( text[i],  chr(382) )
+        print("...",i, text[i] , ord( text[i])  )
+
+    if ord(text[i])==142:   # ZH
+        text=text.replace( text[i],  chr(381) )
+        print("...",i, text[i] , ord( text[i])  )
+        
+    if ord(text[i])==154:  # sh
+        text=text.replace( text[i],  chr(353) )
+        print("...",i, text[i] , ord( text[i])  )
+        
+    if ord(text[i])==138:  # SH
+        text=text.replace( text[i],  chr(352) )
+        print("...",i, text[i] , ord( text[i])  )
+
+    if ord(text[i])==157:  # t
+        text=text.replace( text[i],  chr(357) )
+        print("...",i, text[i] , ord( text[i])  )
+
+    if ord(text[i])==13:  #   DOS  newline
+        text=text.replace( text[i],  chr(10) )
+        print("...",i, text[i] , ord( text[i])  )
+
+
+
+
+        
+#time.sleep(3)    
 badfstp=re.findall(r'\.\w', text )
 print( len(badfstp),'bad fullstops:' , badfstp)
 
@@ -266,9 +324,12 @@ text=re.sub(r'\.\.\.\s+','...',text)  # silence
 text=re.sub(r"`","'",text)  # bad apostrophes crashed
 text=re.sub(r"/"," ",text)  # /NSA/ crashed trans
 
+######## too many ...............
+text=re.sub(r'\.\.\.+','...',text)  # reduce .............
 
 #print(text)
 print('=====================================================was mod')
+
 
 
 
@@ -305,6 +366,7 @@ for i,v in enumerate( sentences ):
         if len(v)+len(sentences[i+1])<99:
             sentences[i]=sentences[i]+' '+sentences[i+1]
             del sentences[i+1]
+
             
 ############################
 # 
@@ -327,26 +389,6 @@ print('i...                 ...preparing diff............')
 ndif=0
 ndifim=0
 
-#
-#ndif=difflib.ndiff(  text, text2 )
-#print( ''.join(ndif)   )
-#for dif in difflib.context_diff( text, text2 ):
-#    print( dif )
-#
-    #for i,s in enumerate( difflib.ndiff(text,text2)):
-#    if s[0]==' ': continue
-#    elif s[0]=='-' :
-#        #print(u'Delete "{}" from position {}'.format(s[-1],i))
-#        ndif=ndif+1
-#    elif s[0]=='+' :
-#        #print(u'Add "{}" to position {}'.format(s[-1],i))    
-#        ndif=ndif+1
-#    elif s[0]=='-' and len(s[-1])>1:
-#        print(u'Delete "{}" from position {}'.format(s[-1],i))
-#        ndifim=ndifim+1
-#    elif s[0]=='+' and len(s[-1])>1:
-#        print(u'Add "{}" to position {}'.format(s[-1],i))    
-#        ndifim=ndifim+1
 print('Differences:',ndif,' / important:',ndifim)
 print()      
 
@@ -360,8 +402,6 @@ print()
 #####################################
 #quit()
 
-
-
 def parse_all_sentences( argsdryrun, TOTALLINES ):
     global sentences
     if TOTALLINES==0:
@@ -370,7 +410,7 @@ def parse_all_sentences( argsdryrun, TOTALLINES ):
         TOTAL=TOTALLINES
     sumoflines=0
     ###print( 'TOTAL==', TOTAL )
-    time.sleep(1)
+    #time.sleep(1)
     for i in range(len(sentences)):
         print( " "*int((99+2+9)),      end="\n" )  # \r
 
@@ -460,10 +500,10 @@ START=datetime.datetime.now()
 parse_all_sentences( False , sumoflines )
 
 # SIMPLE  join        
-print("\n\ncat trans_"+temp_name+".mp3 > \""+args.book+".mp3\"")
+print("\n\ncat READBOOK/ztrans_"+temp_name+"*.mp3 > \""+args.book+".mp3\"")
 print("\n\nmp3val "+args.book+".mp3 -f -nb \n\n ")
-print("\n\ncat trans_"+temp_name+".mp3 > \""+os.path.basename(args.book)+".mp3\"")
-print("\n\nmp3val "+os.path.basename(args.book)+".mp3\" -f -nb\n")
+print("\n\ncat READBOOK/ztrans_"+temp_name+"*.mp3 > \""+os.path.basename(args.book)+".mp3\"")
+print("\n\nmp3val \""+os.path.basename(args.book)+".mp3\" -f -nb\n")
 
 tmdelta=(datetime.datetime.now() - START)
 print( str(tmdelta) , '  total time' )
