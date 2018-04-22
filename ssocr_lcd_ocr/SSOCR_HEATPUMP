@@ -1,0 +1,1 @@
+./ssocr-2.16.3/ssocr -r 20 -v    -D r_threshold  -t 32 -a  -d -1   crop 250 60 320 240 make_mono invert  erosion dilation temp.jpg
