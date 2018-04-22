@@ -28,7 +28,7 @@ def ConvertDir2Avi( dirn ):
         j=j+1
         if j%5!=0:continue
         print(wmax,hmax," ...",i,j,"/",len(jpgs)," ", end="\r")
-        print(i)
+        #print(i)
         try:
             image = cv2.imread(i)
         except:
@@ -61,7 +61,11 @@ def ConvertDir2Avi( dirn ):
             img_black[0:0+image.shape[0], 0:0+image.shape[1]] = image
             out.write(  img_black )
         else:
-            out.write(  image )
+            #print("D... writing c",image.shape[0], image.shape[1]," ")
+            try:
+                out.write(  image )
+            except:
+                print("!... error when writing frame",image.shape[0], image.shape[1]," ")
 
     out.release()
     print("\n")
@@ -80,6 +84,7 @@ if PATH[-1]!="/": PATH=PATH+"/"
 print("i... ready to convert @",PATH,"  now=",TODAY)
 
 for i in glob.glob(PATH+"*"):
+    #print( i )
     if os.path.isdir(i):
         if os.path.isfile( i+".avi" ):
             print("|... AVI already exists",i)

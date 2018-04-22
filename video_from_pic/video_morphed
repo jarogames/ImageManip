@@ -1,0 +1,25 @@
+#!/bin/bash
+
+echo "======================== CREATE VIDEO==================+"
+echo mkdir temp
+echo "cp *.jpg temp/."
+echo "mogrify -resize 800x800  temp/*.jpg"
+echo ============== fantastic morphing between pictures
+echo "convert temp/*.JPG -delay 10 -morph 10 temp/%05d.jpg"
+
+# ============= create list of files............ copy 30x each
+echo "ls -1 temp/* | awk '{d[NR] = $0} END {for (j=1;j<=30;j++) for (i=1;i<=NR;i++) print d[i]; }' | sort > 00files.txt"
+echo "time convert @00files.txt -delay 10 -morph 10 temp/%06d.jpg"
+
+
+
+echo ======== enlarge-... NO!, PLACE the picture to the same size for all
+echo "ls 00* -1 | xargs -n 1 -I III  convert III -gravity center -background black  -extent 800x800  XIII"
+echo ============vid
+echo "ffmpeg -r 25 -qscale 2  -i temp/%05d.jpg output.mp4"
+echo "rm -R temp"
+
+
+
+echo "======================== DECOMPOSE VIDEO==================+"
+echo "convert DSCN3198.MOV im%05d.png"
