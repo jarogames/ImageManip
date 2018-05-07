@@ -12,6 +12,7 @@ import argparse
 #####################################
 parser=argparse.ArgumentParser(description="",usage="", formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('-d','--diveinto', required=True, help='')
+parser.add_argument('-o','--overwrite_today',action="store_true" , help='')
 parser.add_argument('--debug', action="store_true", help='')#,required=True
 args=parser.parse_args()
 
@@ -89,7 +90,7 @@ for i in glob.glob(PATH+"*"):
         if os.path.isfile( i+".avi" ):
             print("|... AVI already exists",i)
             continue
-        if i.find( TODAY )>=0:
-            print("|--- not this",i)
+        if i.find( TODAY )>=0 and not args.overwrite_today:
+            print("|--- not this {}, it is today, try -o".format(i))
             continue
         ConvertDir2Avi( i )
