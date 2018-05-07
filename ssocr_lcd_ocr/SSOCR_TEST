@@ -1,1 +1,10 @@
-ssocr -v  -r 5   -D -t 95 -d -1  rotate 7 shear 135 crop 440 380 150 100   make_mono invert  erosion  2016-03-02-105013.jpg 
+#!/bin/bash
+wget "http://localhost:8080/?action=snapshot" -O temp.jpg
+
+#./ssocr-2.16.3/ssocr -r 1 -v    -D r_threshold  -t 29 -a  -d -1   crop 250 60 320 240 make_mono invert  erosion dilation temp.jpg
+# worked #################################
+date
+./ssocr-2.16.3/ssocr -r 1 -v  -D    -d -1   crop 280 120 120 100    make_mono  -t 63  make_mono invert erosion dilation  temp.jpg
+sleep 2
+
+#./ssocr-2.16.3/ssocr -v  -r 5   -D -t 95 -d -1  rotate 7 shear 135 crop 440 380 150 100   make_mono invert  erosion  temp.jpg
