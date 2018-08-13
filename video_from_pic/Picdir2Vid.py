@@ -30,14 +30,18 @@ def ConvertDir2Avi( dirn ):
         if j%5!=0:continue
         print(wmax,hmax," ...",i,j,"/",len(jpgs)," ", end="\r")
         #print(i)
+        readok=False
         try:
             image = cv2.imread(i)
+            readok=True
         except:
             print("CORRUPT")
-        height = np.size(image, 0)
-        width =  np.size(image, 1)
-        if wmax<width:wmax=width
-        if hmax<height:hmax=height
+        if image==None: readok=False
+        if readok:
+            height = np.size(image, 0)
+            width =  np.size(image, 1)
+            if wmax<width:wmax=width
+            if hmax<height:hmax=height
     print("\nWxH = ",wmax,"x",hmax)
     img_black=np.zeros( (hmax,wmax,3),dtype=np.uint8)
     
@@ -53,20 +57,28 @@ def ConvertDir2Avi( dirn ):
     for i in jpgs:
         j=j+1
         print(" ...",i,j,"/",len(jpgs)," ", end="\r")
-        image = cv2.imread(i)
-        height = np.size(image, 0)
-        width =  np.size(image, 1)
-        ###print("PIC ",i,width,"x",height," ")
-        if height<hmax or width<wmax:
-            #print("error",width,height)
-            img_black[0:0+image.shape[0], 0:0+image.shape[1]] = image
-            out.write(  img_black )
-        else:
-            #print("D... writing c",image.shape[0], image.shape[1]," ")
-            try:
-                out.write(  image )
-            except:
-                print("!... error when writing frame",image.shape[0], image.shape[1]," ")
+        readok=False
+        try:
+            image = cv2.imread(i)
+            readok=True
+        except:
+            print("CORRUPT")
+        if image==None: readok=False
+        if readok:
+            image = cv2.imread(i)
+            height = np.size(image, 0)
+            width =  np.size(image, 1)
+            ###print("PIC ",i,width,"x",height," ")
+            if height<hmax or width<wmax:
+                #print("error",width,height)
+                img_black[0:0+image.shape[0], 0:0+image.shape[1]] = image
+                out.write(  img_black )
+            else:
+                #print("D... writing c",image.shape[0], image.shape[1]," ")
+                try:
+                    out.write(  image )
+                except:
+                    print("!... error when writing frame",image.shape[0], image.shape[1]," ")
 
     out.release()
     print("\n")
